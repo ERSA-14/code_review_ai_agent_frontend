@@ -1,0 +1,87 @@
+@import "tailwindcss";
+
+/* Custom scrollbar styles */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background-color: #f3f4f6;
+  border-radius: 4px;
+}
+
+.dark ::-webkit-scrollbar-track {
+  background-color: #1f2937;
+}
+
+::-webkit-scrollbar-thumb {
+  background-color: #d1d5db;
+  border-radius: 4px;
+}
+
+.dark ::-webkit-scrollbar-thumb {
+  background-color: #4b5563;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background-color: #9ca3af;
+}
+
+.dark ::-webkit-scrollbar-thumb:hover {
+  background-color: #6b7280;
+}
+
+/* Monaco Editor overrides */
+.monaco-editor {
+  border-radius: 0;
+}
+
+.monaco-editor .margin {
+  background-color: rgb(248 250 252) !important;
+}
+
+.dark .monaco-editor .margin {
+  background-color: rgb(30 41 59) !important;
+}
+
+/* Code block styling */
+code {
+  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+  background-color: #f3f4f6;
+  padding: 0.125rem 0.25rem;
+  border-radius: 0.25rem;
+  font-size: 0.875rem;
+}
+
+.dark code {
+  background-color: #1f2937;
+}
+
+/* Toast styling */
+[data-sonner-toaster] {
+  font-family: inherit;
+}
+
+/* Problem description prose styling */
+.prose {
+  line-height: 1.6;
+  color: #111827;
+}
+
+.dark .prose {
+  color: #f9fafb;
+}
+
+.prose p {
+  margin-bottom: 1rem;
+}
+
+.prose ul, .prose ol {
+  margin-bottom: 1rem;
+  padding-left: 1.5rem;
+}
+
+.prose li {
+  margin-bottom: 0.5rem;
+}

@@ -93,8 +93,8 @@ export default function ProblemPage() {
       
       {/* Header */}
       <header className="bg-white dark:bg-gray-800 shadow-sm border-b border-gray-200 dark:border-gray-700">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center py-4">
+        <div className="w-full px-4">
+          <div className="flex justify-between items-center py-3">
             <div className="flex items-center space-x-4">
               <button
                 onClick={() => router.push("/")}
@@ -119,10 +119,10 @@ export default function ProblemPage() {
         </div>
       </header>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 h-[calc(100vh-120px)]">
+      <div className="w-full px-2 py-2">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-1 h-[calc(100vh-120px)]">
           {/* Left Panel - Problem Description */}
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm overflow-hidden border border-gray-200 dark:border-gray-700">
+          <div className="bg-white dark:bg-gray-800 rounded-lg overflow-hidden border border-gray-200 dark:border-gray-700">
             <div className="border-b border-gray-200 dark:border-gray-700">
               <nav className="flex space-x-8 px-6">
                 <button
@@ -250,7 +250,7 @@ export default function ProblemPage() {
           </div>
 
           {/* Right Panel - Code Editor */}
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm overflow-hidden flex flex-col border border-gray-200 dark:border-gray-700">
+          <div className="bg-white dark:bg-gray-800 rounded-lg overflow-hidden flex flex-col border border-gray-200 dark:border-gray-700">
             {/* Editor Header */}
             <div className="border-b border-gray-200 dark:border-gray-700 p-4">
               <div className="flex justify-between items-center">

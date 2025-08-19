@@ -21,6 +21,18 @@ export default function ProblemPage() {
   const [code, setCode] = useState(question?.starterCode[selectedLanguage] || "");
   const [activeTab, setActiveTab] = useState<"description" | "submissions">("description");
   const [hasSubmitted, setHasSubmitted] = useState(false);
+  const [consoleOutput, setConsoleOutput] = useState<string[]>([
+    "Welcome to CodePlatform Judge0 Environment",
+    "Ready to execute your code..."
+  ]);
+  const [submissions, setSubmissions] = useState<Array<{
+    id: number;
+    language: string;
+    code: string;
+    timestamp: Date;
+    status: string;
+    filename: string;
+  }>>([]);
 
   useEffect(() => {
     if (question) {
@@ -49,16 +61,110 @@ export default function ProblemPage() {
     setCode(question.starterCode[language] || "");
   };
 
+  const getFileExtension = (language: string) => {
+    switch (language) {
+      case "javascript": return ".js";
+      case "python": return ".py";
+      case "java": return ".java";
+      case "cpp": return ".cpp";
+      default: return ".txt";
+    }
+  };
+
+  const executeCode = (code: string, language: string) => {
+    // Simulate code execution with different outputs based on language
+    switch (language) {
+      case "javascript":
+        try {
+          // Simple evaluation for basic JavaScript
+          if (code.includes("console.log")) {
+            const matches = code.match(/console\.log\(([^)]+)\)/g);
+            if (matches) {
+              return matches.map(match => {
+                const content = match.match(/console\.log\(([^)]+)\)/)?.[1] || "";
+                try {
+                  return eval(content);
+                } catch {
+                  return content.replace(/['"]/g, "");
+                }
+              }).join("\n");
+            }
+          }
+          // For functions, show a sample execution
+          if (code.includes("function") || code.includes("=>")) {
+            return "Function defined successfully\nExample output: [1, 2, 3, 4, 5]";
+          }
+          return "Code executed successfully";
+        } catch (error) {
+          return `Error: ${error}`;
+        }
+
+      case "python":
+        if (code.includes("print(")) {
+          const matches = code.match(/print\(([^)]+)\)/g);
+          if (matches) {
+            return matches.map(match => {
+              const content = match.match(/print\(([^)]+)\)/)?.[1] || "";
+              return content.replace(/['"]/g, "");
+            }).join("\n");
+          }
+        }
+        if (code.includes("def ")) {
+          return "Function defined successfully\nExample output: [1, 2, 3, 4, 5]";
+        }
+        return "Code executed successfully";
+
+      case "java":
+        if (code.includes("System.out.println")) {
+          return "Hello World\nCode executed successfully";
+        }
+        return "Java program compiled and executed successfully";
+
+      case "cpp":
+        if (code.includes("cout")) {
+          return "Hello World\nC++ program executed successfully";
+        }
+        return "C++ program compiled and executed successfully";
+
+      default:
+        return "Code executed successfully";
+    }
+  };
+
   const handleRun = () => {
+    const output = executeCode(code, selectedLanguage);
+    const timestamp = new Date().toLocaleTimeString();
+    
+    setConsoleOutput(prev => [
+      ...prev,
+      `[${timestamp}] Running ${selectedLanguage} code...`,
+      output,
+      "--- Execution completed ---"
+    ]);
+
     toast.success("Code executed successfully!", {
       description: "Check the console for output"
     });
   };
 
   const handleSubmit = () => {
+    const timestamp = new Date();
+    const filename = `solution_${question.id}_${timestamp.getTime()}${getFileExtension(selectedLanguage)}`;
+    
+    const newSubmission = {
+      id: submissions.length + 1,
+      language: selectedLanguage,
+      code: code,
+      timestamp: timestamp,
+      status: "Accepted",
+      filename: filename
+    };
+
+    setSubmissions(prev => [newSubmission, ...prev]);
     setHasSubmitted(true);
+    
     toast.success("Solution submitted successfully!", {
-      description: "Your submission is being processed"
+      description: `File saved as ${filename}`
     });
     
     // Automatically switch to submissions tab after a short delay
@@ -207,41 +313,77 @@ export default function ProblemPage() {
                 </div>
               ) : (
                 <div className="space-y-4">
-                  <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Submission Report</h2>
-                  {hasSubmitted ? (
-                    <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-4">
-                      <h3 className="font-semibold text-green-800 dark:text-green-400 mb-2">✅ Submission Accepted</h3>
-                      <div className="space-y-2 text-sm text-green-700 dark:text-green-300">
-                        <p><strong>Runtime:</strong> 68 ms (Beats 85.23% of users)</p>
-                        <p><strong>Memory:</strong> 44.2 MB (Beats 72.45% of users)</p>
-                        <p><strong>Language:</strong> {selectedLanguage}</p>
-                        <p><strong>Test Cases Passed:</strong> 58/58</p>
-                      </div>
-                      
-                      <div className="mt-4 p-3 bg-white dark:bg-gray-800 border border-green-200 dark:border-green-800 rounded">
-                        <h4 className="font-semibold text-green-800 dark:text-green-400 mb-2">AI Analysis Report</h4>
-                        <div className="text-sm text-gray-900 dark:text-gray-100 space-y-2">
-                          <p><strong>Code Quality:</strong> Excellent</p>
-                          <p><strong>Time Complexity:</strong> O(n) - Linear time solution</p>
-                          <p><strong>Space Complexity:</strong> O(n) - Uses additional hash map</p>
-                          <p><strong>Strengths:</strong></p>
-                          <ul className="list-disc list-inside ml-4">
-                            <li>Clean and readable code structure</li>
-                            <li>Efficient use of hash map for O(1) lookups</li>
-                            <li>Handles edge cases properly</li>
-                          </ul>
-                          <p><strong>Suggestions:</strong></p>
-                          <ul className="list-disc list-inside ml-4">
-                            <li>Consider adding input validation</li>
-                            <li>Variable names could be more descriptive</li>
-                          </ul>
+                  <div className="flex justify-between items-center">
+                    <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Submissions</h2>
+                    <span className="text-sm text-gray-500 dark:text-gray-400">
+                      {submissions.length} submission{submissions.length !== 1 ? 's' : ''}
+                    </span>
+                  </div>
+
+                  {submissions.length > 0 ? (
+                    <div className="space-y-3">
+                      {submissions.map((submission) => (
+                        <div key={submission.id} className="border border-gray-200 dark:border-gray-700 rounded-lg p-4 bg-gray-50 dark:bg-gray-900/50">
+                          <div className="flex justify-between items-start mb-2">
+                            <div className="flex items-center space-x-2">
+                              <FileText className="w-4 h-4 text-blue-500" />
+                              <span className="font-medium text-gray-900 dark:text-white">{submission.filename}</span>
+                              <span className={`px-2 py-1 text-xs rounded-full ${
+                                submission.status === 'Accepted' 
+                                  ? 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400'
+                                  : 'bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400'
+                              }`}>
+                                {submission.status}
+                              </span>
+                            </div>
+                            <div className="text-right text-sm text-gray-500 dark:text-gray-400">
+                              <div>{submission.timestamp.toLocaleDateString()}</div>
+                              <div>{submission.timestamp.toLocaleTimeString()}</div>
+                            </div>
+                          </div>
+                          
+                          <div className="flex items-center space-x-4 text-sm text-gray-600 dark:text-gray-300 mb-3">
+                            <span>Language: <strong>{submission.language}</strong></span>
+                            <span>Size: <strong>{new Blob([submission.code]).size} bytes</strong></span>
+                          </div>
+
+                          <details className="group">
+                            <summary className="cursor-pointer text-sm text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300">
+                              View Code
+                            </summary>
+                            <div className="mt-2 p-3 bg-gray-100 dark:bg-gray-800 rounded border">
+                              <pre className="text-sm overflow-x-auto">
+                                <code className="text-gray-900 dark:text-gray-100">{submission.code}</code>
+                              </pre>
+                            </div>
+                          </details>
+
+                          <div className="mt-3 pt-3 border-t border-gray-200 dark:border-gray-700">
+                            <div className="flex space-x-4 text-xs text-gray-500 dark:text-gray-400">
+                              <span>Runtime: 68ms</span>
+                              <span>Memory: 44.2MB</span>
+                              <span>Test Cases: 58/58</span>
+                            </div>
+                          </div>
                         </div>
-                      </div>
+                      ))}
                     </div>
                   ) : (
                     <div className="text-center py-8 text-gray-500 dark:text-gray-400">
                       <FileText className="w-12 h-12 mx-auto mb-4 text-gray-300 dark:text-gray-600" />
-                      <p>No submissions yet. Submit your solution to see the report!</p>
+                      <p>No submissions yet. Submit your solution to see your files here!</p>
+                    </div>
+                  )}
+
+                  {hasSubmitted && submissions.length > 0 && (
+                    <div className="mt-6 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-4">
+                      <h3 className="font-semibold text-green-800 dark:text-green-400 mb-2">✅ Latest Submission Analysis</h3>
+                      <div className="space-y-2 text-sm text-green-700 dark:text-green-300">
+                        <p><strong>AI Analysis Report for:</strong> {submissions[0]?.filename}</p>
+                        <p><strong>Time Complexity:</strong> O(n) - Linear time solution</p>
+                        <p><strong>Space Complexity:</strong> O(n) - Uses additional hash map</p>
+                        <p><strong>Code Quality:</strong> Excellent</p>
+                      </div>
                     </div>
                   )}
                 </div>
@@ -307,10 +449,19 @@ export default function ProblemPage() {
 
             {/* Console/Output Area */}
             <div className="border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/50 p-4 h-32">
-              <h4 className="font-semibold text-sm text-gray-900 dark:text-white mb-2">Console</h4>
+              <div className="flex justify-between items-center mb-2">
+                <h4 className="font-semibold text-sm text-gray-900 dark:text-white">Console</h4>
+                <button 
+                  onClick={() => setConsoleOutput(["Console cleared"])}
+                  className="text-xs text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300"
+                >
+                  Clear
+                </button>
+              </div>
               <div className="bg-black text-green-400 p-2 rounded text-sm font-mono h-20 overflow-y-auto">
-                <div>Welcome to CodePlatform Judge0 Environment</div>
-                <div className="text-gray-400">Ready to execute your code...</div>
+                {consoleOutput.map((line, index) => (
+                  <div key={index} className={line.includes("Error") ? "text-red-400" : ""}>{line}</div>
+                ))}
               </div>
             </div>
           </div>

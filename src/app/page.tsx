@@ -28,6 +28,7 @@ export default function Home() {
             <div className="flex items-center space-x-4">
               <nav className="flex space-x-4">
                 <a href="#" className="text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white transition-colors">Problems</a>
+                <a href="/submissions" className="text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white transition-colors">Submissions</a>
                 <a href="#" className="text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white transition-colors">Contest</a>
                 <a href="#" className="text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white transition-colors">Discuss</a>
               </nav>

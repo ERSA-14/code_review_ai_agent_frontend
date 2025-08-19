@@ -4,10 +4,12 @@ import { useState, useEffect } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { questions } from "@/data/questions";
 import Editor from "@monaco-editor/react";
-import { Play, Send, FileText, ArrowLeft } from "lucide-react";
+import { Play, Send, FileText, ArrowLeft, Bot, Eye, Clock, CheckCircle, Loader2 } from "lucide-react";
 import { toast, Toaster } from "sonner";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { useTheme } from "@/components/theme-provider";
+import { apiService, type SubmissionFile } from "@/services/api";
+import { MarkdownReport } from "@/components/markdown-report";
 
 export default function ProblemPage() {
   const router = useRouter();
@@ -25,20 +27,61 @@ export default function ProblemPage() {
     "Welcome to CodePlatform Judge0 Environment",
     "Ready to execute your code..."
   ]);
-  const [submissions, setSubmissions] = useState<Array<{
-    id: number;
+  const [submissions, setSubmissions] = useState<Array<SubmissionFile & {
     language: string;
     code: string;
-    timestamp: Date;
     status: string;
-    filename: string;
+    hasReport?: boolean;
+    reportContent?: string;
+    reportTimestamp?: string;
   }>>([]);
+  const [isUploading, setIsUploading] = useState(false);
+  const [isGeneratingReport, setIsGeneratingReport] = useState<string | null>(null);
+  const [selectedReport, setSelectedReport] = useState<{
+    content: string;
+    filename: string;
+    timestamp: string;
+  } | null>(null);
+
+  // Load submissions from backend on component mount
+  useEffect(() => {
+    loadSubmissions();
+  }, []);
+
+  const loadSubmissions = async () => {
+    try {
+      const response = await apiService.listFiles();
+      if (response.success) {
+        const submissionsWithMetadata = response.files.map(file => ({
+          ...file,
+          language: getLanguageFromFilename(file.filename),
+          code: "",
+          status: "Accepted",
+          hasReport: false
+        }));
+        setSubmissions(submissionsWithMetadata);
+      }
+    } catch (error) {
+      console.error('Failed to load submissions:', error);
+    }
+  };
 
   useEffect(() => {
     if (question) {
       setCode(question.starterCode[selectedLanguage] || "");
     }
   }, [question, selectedLanguage]);
+
+  const getLanguageFromFilename = (filename: string): string => {
+    const ext = filename.split('.').pop()?.toLowerCase();
+    switch (ext) {
+      case 'js': return 'javascript';
+      case 'py': return 'python';
+      case 'java': return 'java';
+      case 'cpp': case 'cc': case 'cxx': return 'cpp';
+      default: return 'javascript';
+    }
+  };
 
   if (!question) {
     return (
@@ -147,30 +190,92 @@ export default function ProblemPage() {
     });
   };
 
-  const handleSubmit = () => {
-    const timestamp = new Date();
-    const filename = `solution_${question.id}_${timestamp.getTime()}${getFileExtension(selectedLanguage)}`;
-    
-    const newSubmission = {
-      id: submissions.length + 1,
-      language: selectedLanguage,
-      code: code,
-      timestamp: timestamp,
-      status: "Accepted",
-      filename: filename
-    };
+  const handleSubmit = async () => {
+    if (!code.trim()) {
+      toast.error("Cannot submit empty code");
+      return;
+    }
 
-    setSubmissions(prev => [newSubmission, ...prev]);
-    setHasSubmitted(true);
+    setIsUploading(true);
+    const timestamp = new Date();
+    const filename = `solution_${question?.id}_${timestamp.getTime()}${getFileExtension(selectedLanguage)}`;
     
-    toast.success("Solution submitted successfully!", {
-      description: `File saved as ${filename}`
-    });
+    try {
+      const response = await apiService.uploadFile(code, filename, selectedLanguage);
+      
+      if (response.success && response.file) {
+        setHasSubmitted(true);
+        toast.success("Solution submitted successfully!", {
+          description: `File uploaded as ${response.file.filename}`
+        });
+        
+        // Reload submissions to get the updated list
+        await loadSubmissions();
+        
+        // Automatically switch to submissions tab after a short delay
+        setTimeout(() => {
+          setActiveTab("submissions");
+        }, 1000);
+      } else {
+        toast.error("Submission failed", {
+          description: response.message || "Unknown error occurred"
+        });
+      }
+    } catch (error) {
+      toast.error("Submission failed", {
+        description: "Network error occurred"
+      });
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
+  const handleGenerateReport = async (filename: string) => {
+    setIsGeneratingReport(filename);
     
-    // Automatically switch to submissions tab after a short delay
-    setTimeout(() => {
-      setActiveTab("submissions");
-    }, 1000);
+    try {
+      const response = await apiService.generateReport(
+        filename,
+        question?.description,
+        `Problem: ${question?.title}\nDifficulty: ${question?.difficulty}\nTags: ${question?.tags.join(', ')}`
+      );
+      
+      if (response.success && response.report) {
+        // Update the submission with the report
+        setSubmissions(prev => prev.map(sub => 
+          sub.filename === filename 
+            ? { 
+                ...sub, 
+                hasReport: true, 
+                reportContent: response.report,
+                reportTimestamp: response.timestamp 
+              }
+            : sub
+        ));
+        
+        toast.success("AI report generated successfully!");
+      } else {
+        toast.error("Report generation failed", {
+          description: response.message || "Unknown error occurred"
+        });
+      }
+    } catch (error) {
+      toast.error("Report generation failed", {
+        description: "Network error occurred"
+      });
+    } finally {
+      setIsGeneratingReport(null);
+    }
+  };
+
+  const handleViewReport = (submission: any) => {
+    if (submission.hasReport && submission.reportContent) {
+      setSelectedReport({
+        content: submission.reportContent,
+        filename: submission.filename,
+        timestamp: submission.reportTimestamp || 'Unknown'
+      });
+    }
   };
 
   const getDifficultyColor = (difficulty: string) => {
@@ -322,8 +427,8 @@ export default function ProblemPage() {
 
                   {submissions.length > 0 ? (
                     <div className="space-y-3">
-                      {submissions.map((submission) => (
-                        <div key={submission.id} className="border border-gray-200 dark:border-gray-700 rounded-lg p-4 bg-gray-50 dark:bg-gray-900/50">
+                      {submissions.map((submission, index) => (
+                        <div key={submission.filename} className="border border-gray-200 dark:border-gray-700 rounded-lg p-4 bg-gray-50 dark:bg-gray-900/50">
                           <div className="flex justify-between items-start mb-2">
                             <div className="flex items-center space-x-2">
                               <FileText className="w-4 h-4 text-blue-500" />
@@ -337,23 +442,60 @@ export default function ProblemPage() {
                               </span>
                             </div>
                             <div className="text-right text-sm text-gray-500 dark:text-gray-400">
-                              <div>{submission.timestamp.toLocaleDateString()}</div>
-                              <div>{submission.timestamp.toLocaleTimeString()}</div>
+                              <div>{new Date(submission.uploadDate).toLocaleDateString()}</div>
+                              <div>{new Date(submission.uploadDate).toLocaleTimeString()}</div>
                             </div>
                           </div>
                           
                           <div className="flex items-center space-x-4 text-sm text-gray-600 dark:text-gray-300 mb-3">
                             <span>Language: <strong>{submission.language}</strong></span>
-                            <span>Size: <strong>{new Blob([submission.code]).size} bytes</strong></span>
+                            <span>Size: <strong>{submission.size} bytes</strong></span>
+                          </div>
+
+                          {/* Action Buttons */}
+                          <div className="flex items-center space-x-3 mb-3">
+                            {!submission.hasReport ? (
+                              <button
+                                onClick={() => handleGenerateReport(submission.filename)}
+                                disabled={isGeneratingReport === submission.filename}
+                                className="flex items-center px-3 py-1.5 bg-blue-600 dark:bg-blue-500 text-white rounded text-sm hover:bg-blue-700 dark:hover:bg-blue-400 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                              >
+                                {isGeneratingReport === submission.filename ? (
+                                  <>
+                                    <Loader2 className="w-4 h-4 mr-1 animate-spin" />
+                                    Generating...
+                                  </>
+                                ) : (
+                                  <>
+                                    <Bot className="w-4 h-4 mr-1" />
+                                    Generate AI Report
+                                  </>
+                                )}
+                              </button>
+                            ) : (
+                              <div className="flex items-center space-x-2">
+                                <span className="flex items-center text-green-600 dark:text-green-400 text-sm">
+                                  <CheckCircle className="w-4 h-4 mr-1" />
+                                  Report Ready
+                                </span>
+                                <button
+                                  onClick={() => handleViewReport(submission)}
+                                  className="flex items-center px-3 py-1.5 bg-green-600 dark:bg-green-500 text-white rounded text-sm hover:bg-green-700 dark:hover:bg-green-400 transition-colors"
+                                >
+                                  <Eye className="w-4 h-4 mr-1" />
+                                  View Report
+                                </button>
+                              </div>
+                            )}
                           </div>
 
                           <details className="group">
                             <summary className="cursor-pointer text-sm text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300">
-                              View Code
+                              View Source Code
                             </summary>
                             <div className="mt-2 p-3 bg-gray-100 dark:bg-gray-800 rounded border">
                               <pre className="text-sm overflow-x-auto">
-                                <code className="text-gray-900 dark:text-gray-100">{submission.code}</code>
+                                <code className="text-gray-900 dark:text-gray-100">{submission.code || 'Code content not available in cached submissions'}</code>
                               </pre>
                             </div>
                           </details>
@@ -363,6 +505,12 @@ export default function ProblemPage() {
                               <span>Runtime: 68ms</span>
                               <span>Memory: 44.2MB</span>
                               <span>Test Cases: 58/58</span>
+                              {submission.hasReport && submission.reportTimestamp && (
+                                <span className="flex items-center">
+                                  <Clock className="w-3 h-3 mr-1" />
+                                  Report: {new Date(submission.reportTimestamp).toLocaleString()}
+                                </span>
+                              )}
                             </div>
                           </div>
                         </div>
@@ -372,18 +520,6 @@ export default function ProblemPage() {
                     <div className="text-center py-8 text-gray-500 dark:text-gray-400">
                       <FileText className="w-12 h-12 mx-auto mb-4 text-gray-300 dark:text-gray-600" />
                       <p>No submissions yet. Submit your solution to see your files here!</p>
-                    </div>
-                  )}
-
-                  {hasSubmitted && submissions.length > 0 && (
-                    <div className="mt-6 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-4">
-                      <h3 className="font-semibold text-green-800 dark:text-green-400 mb-2">✅ Latest Submission Analysis</h3>
-                      <div className="space-y-2 text-sm text-green-700 dark:text-green-300">
-                        <p><strong>AI Analysis Report for:</strong> {submissions[0]?.filename}</p>
-                        <p><strong>Time Complexity:</strong> O(n) - Linear time solution</p>
-                        <p><strong>Space Complexity:</strong> O(n) - Uses additional hash map</p>
-                        <p><strong>Code Quality:</strong> Excellent</p>
-                      </div>
                     </div>
                   )}
                 </div>
@@ -417,10 +553,20 @@ export default function ProblemPage() {
                   </button>
                   <button
                     onClick={handleSubmit}
-                    className="flex items-center px-3 py-1 bg-green-600 dark:bg-green-500 text-white rounded text-sm hover:bg-green-700 dark:hover:bg-green-400 transition-colors"
+                    disabled={isUploading}
+                    className="flex items-center px-3 py-1 bg-green-600 dark:bg-green-500 text-white rounded text-sm hover:bg-green-700 dark:hover:bg-green-400 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    <Send className="w-4 h-4 mr-1" />
-                    Submit
+                    {isUploading ? (
+                      <>
+                        <Loader2 className="w-4 h-4 mr-1 animate-spin" />
+                        Uploading...
+                      </>
+                    ) : (
+                      <>
+                        <Send className="w-4 h-4 mr-1" />
+                        Submit
+                      </>
+                    )}
                   </button>
                 </div>
               </div>
@@ -467,6 +613,16 @@ export default function ProblemPage() {
           </div>
         </div>
       </div>
+
+      {/* Report Modal */}
+      {selectedReport && (
+        <MarkdownReport
+          content={selectedReport.content}
+          filename={selectedReport.filename}
+          timestamp={selectedReport.timestamp}
+          onClose={() => setSelectedReport(null)}
+        />
+      )}
     </div>
   );
 }

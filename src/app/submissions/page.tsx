@@ -33,20 +33,18 @@ export default function SubmissionsPage() {
   const loadSubmissions = async () => {
     try {
       setLoading(true);
-      const response = await apiService.listFiles();
-      if (response.success) {
-        const submissionsWithMetadata = response.files.map(file => ({
-          ...file,
-          language: getLanguageFromFilename(file.filename),
-          status: "Accepted",
-          hasReport: false
-        }));
-        setSubmissions(submissionsWithMetadata);
-      } else {
-        toast.error("Failed to load submissions", {
-          description: response.error || "Unknown error occurred"
-        });
-      }
+      const { files, reports } = await apiService.getFilesWithReports();
+      
+      const submissionsWithMetadata = files.map(file => ({
+        ...file,
+        language: getLanguageFromFilename(file.filename),
+        status: "Accepted",
+        hasReport: !!reports[file.filename],
+        reportContent: reports[file.filename]?.report,
+        reportTimestamp: reports[file.filename]?.timestamp
+      }));
+      
+      setSubmissions(submissionsWithMetadata);
     } catch (error) {
       toast.error("Failed to load submissions", {
         description: "Network error occurred"

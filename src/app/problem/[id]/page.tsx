@@ -50,17 +50,19 @@ export default function ProblemPage() {
 
   const loadSubmissions = async () => {
     try {
-      const response = await apiService.listFiles();
-      if (response.success) {
-        const submissionsWithMetadata = response.files.map(file => ({
-          ...file,
-          language: getLanguageFromFilename(file.filename),
-          code: "",
-          status: "Accepted",
-          hasReport: false
-        }));
-        setSubmissions(submissionsWithMetadata);
-      }
+      const { files, reports } = await apiService.getFilesWithReports();
+      
+      const submissionsWithMetadata = files.map(file => ({
+        ...file,
+        language: getLanguageFromFilename(file.filename),
+        code: "",
+        status: "Accepted",
+        hasReport: !!reports[file.filename],
+        reportContent: reports[file.filename]?.report,
+        reportTimestamp: reports[file.filename]?.timestamp
+      }));
+      
+      setSubmissions(submissionsWithMetadata);
     } catch (error) {
       console.error('Failed to load submissions:', error);
     }

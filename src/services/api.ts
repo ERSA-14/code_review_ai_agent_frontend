@@ -16,6 +16,26 @@ export interface GenerateReportResponse {
   report?: string;
   timestamp?: string;
   metadata?: any;
+  reportFilename?: string;
+  cached?: boolean;
+  generatedAt?: string;
+  error?: string;
+}
+
+export interface ReportListItem {
+  reportFile: string;
+  originalFilename: string;
+  timestamp: string;
+  generatedAt: string;
+  fileSize: number;
+  hasReport: boolean;
+  metadata: any;
+}
+
+export interface ListReportsResponse {
+  success: boolean;
+  count: number;
+  reports: ReportListItem[];
   error?: string;
 }
 
@@ -129,6 +149,70 @@ class ApiService {
         message: 'Report generation failed',
         error: error instanceof Error ? error.message : 'Unknown error'
       };
+    }
+  }
+
+  async getExistingReport(filename: string): Promise<GenerateReportResponse> {
+    try {
+      const response = await fetch(`${API_BASE_URL}/report/file/${filename}`);
+      return await response.json();
+    } catch (error) {
+      return {
+        success: false,
+        message: 'Failed to retrieve report',
+        error: error instanceof Error ? error.message : 'Unknown error'
+      };
+    }
+  }
+
+  async listAllReports(): Promise<ListReportsResponse> {
+    try {
+      const response = await fetch(`${API_BASE_URL}/report/list`);
+      return await response.json();
+    } catch (error) {
+      return {
+        success: false,
+        count: 0,
+        reports: [],
+        error: error instanceof Error ? error.message : 'Unknown error'
+      };
+    }
+  }
+
+  async getFilesWithReports(): Promise<{
+    files: SubmissionFile[];
+    reports: { [filename: string]: GenerateReportResponse };
+  }> {
+    try {
+      const [filesResponse, reportsResponse] = await Promise.all([
+        this.listFiles(),
+        this.listAllReports()
+      ]);
+
+      const files = filesResponse.success ? filesResponse.files : [];
+      const reports: { [filename: string]: GenerateReportResponse } = {};
+
+      if (reportsResponse.success) {
+        // For each file, check if it has a corresponding report
+        for (const file of files) {
+          const reportItem = reportsResponse.reports.find(
+            r => r.originalFilename === file.filename
+          );
+          
+          if (reportItem) {
+            // Get the full report content
+            const reportResponse = await this.getExistingReport(file.filename);
+            if (reportResponse.success) {
+              reports[file.filename] = reportResponse;
+            }
+          }
+        }
+      }
+
+      return { files, reports };
+    } catch (error) {
+      console.error('Error getting files with reports:', error);
+      return { files: [], reports: {} };
     }
   }
 }

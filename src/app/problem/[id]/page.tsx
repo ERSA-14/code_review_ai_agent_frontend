@@ -52,7 +52,21 @@ export default function ProblemPage() {
     try {
       const { files, reports } = await apiService.getFilesWithReports();
       
-      const submissionsWithMetadata = files.map(file => ({
+      // Filter submissions to only show those for the current problem
+      const currentProblemFiles = files.filter(file => {
+        // Extract problem ID from filename (e.g., "solution_1_1234567890.js" -> problem ID is 1)
+        const match = file.filename.match(/solution_(\d+)_/);
+        if (match) {
+          const fileProblemId = parseInt(match[1]);
+          return fileProblemId === problemId;
+        }
+        
+        // Fallback: if filename doesn't match pattern, check if it was uploaded during this session
+        // This handles edge cases where files might have different naming conventions
+        return false;
+      });
+      
+      const submissionsWithMetadata = currentProblemFiles.map(file => ({
         ...file,
         language: getLanguageFromFilename(file.filename),
         code: "",
@@ -83,6 +97,17 @@ export default function ProblemPage() {
       case 'cpp': case 'cc': case 'cxx': return 'cpp';
       default: return 'javascript';
     }
+  };
+
+  const formatSubmissionName = (filename: string): string => {
+    // Extract timestamp and convert to readable format
+    const match = filename.match(/solution_(\d+)_(\d+)\.(.+)/);
+    if (match) {
+      const [, problemId, timestamp, extension] = match;
+      const date = new Date(parseInt(timestamp));
+      return `Submission ${date.toLocaleDateString()} at ${date.toLocaleTimeString()}`;
+    }
+    return filename;
   };
 
   if (!question) {
@@ -421,7 +446,12 @@ export default function ProblemPage() {
               ) : (
                 <div className="space-y-4">
                   <div className="flex justify-between items-center">
-                    <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Submissions</h2>
+                    <div>
+                      <h2 className="text-lg font-semibold text-gray-900 dark:text-white">My Submissions</h2>
+                      <p className="text-sm text-gray-500 dark:text-gray-400">
+                        Submissions for Problem {question.id}: {question.title}
+                      </p>
+                    </div>
                     <span className="text-sm text-gray-500 dark:text-gray-400">
                       {submissions.length} submission{submissions.length !== 1 ? 's' : ''}
                     </span>
@@ -434,7 +464,10 @@ export default function ProblemPage() {
                           <div className="flex justify-between items-start mb-2">
                             <div className="flex items-center space-x-2">
                               <FileText className="w-4 h-4 text-blue-500" />
-                              <span className="font-medium text-gray-900 dark:text-white">{submission.filename}</span>
+                              <div>
+                                <span className="font-medium text-gray-900 dark:text-white">{formatSubmissionName(submission.filename)}</span>
+                                <div className="text-xs text-gray-500 dark:text-gray-400">{submission.filename}</div>
+                              </div>
                               <span className={`px-2 py-1 text-xs rounded-full ${
                                 submission.status === 'Accepted' 
                                   ? 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400'
@@ -521,7 +554,8 @@ export default function ProblemPage() {
                   ) : (
                     <div className="text-center py-8 text-gray-500 dark:text-gray-400">
                       <FileText className="w-12 h-12 mx-auto mb-4 text-gray-300 dark:text-gray-600" />
-                      <p>No submissions yet. Submit your solution to see your files here!</p>
+                      <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">No submissions for this problem yet</h3>
+                      <p>Submit your solution for Problem {question.id} to see your submissions here!</p>
                     </div>
                   )}
                 </div>

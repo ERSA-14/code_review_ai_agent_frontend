@@ -326,22 +326,22 @@ export default function ProblemPage() {
   };
 
   return (
-    <div className="min-h-screen bg-white dark:bg-gray-900">
+    <div className="min-h-screen bg-custom-light dark:bg-custom-dark-primary">
       <Toaster position="top-right" />
       
       {/* Header */}
-      <header className="bg-white dark:bg-gray-800 shadow-sm border-b border-gray-200 dark:border-gray-700">
+      <header className="bg-white dark:bg-custom-dark-secondary shadow-sm border-b border-gray-200 dark:border-custom-dark-primary">
         <div className="w-full px-4">
           <div className="flex justify-between items-center py-3">
             <div className="flex items-center space-x-4">
               <button
-                onClick={() => router.push("/")}
-                className="flex items-center text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white transition-colors"
+                onClick={() => router.push("/problems")}
+                className="flex items-center text-gray-600 dark:text-custom-light hover:text-custom-accent dark:hover:text-custom-accent transition-colors"
               >
                 <ArrowLeft className="w-5 h-5 mr-1" />
-                Back
+                Back to Problems
               </button>
-              <h1 className="text-xl font-bold text-gray-900 dark:text-white">
+              <h1 className="text-xl font-bold text-custom-dark-primary dark:text-custom-light">
                 {question.id}. {question.title}
               </h1>
               <span

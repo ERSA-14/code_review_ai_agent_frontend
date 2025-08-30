@@ -57,14 +57,18 @@ export default function FilesPage() {
     setGeneratingReport(filename);
     
     try {
-      // TODO: Implement report generation functionality
-      // This will integrate with the backend API to generate a code review report
       console.log('Generating report for:', filename);
       
-      // Simulate API call delay
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      // Call the actual API to generate the report
+      const result = await apiService.generateReport(filename, "Code review analysis", "General review");
       
-      alert(`Report generation for ${filename} will be implemented soon!`);
+      if (result.success) {
+        alert(`Report generated successfully for ${filename}! You can view it in the Reports page.`);
+        // Optionally refresh the page or redirect to reports
+        window.location.href = '/reports';
+      } else {
+        alert(`Failed to generate report: ${result.message}`);
+      }
     } catch (error) {
       console.error('Error generating report:', error);
       alert('Failed to generate report. Please try again.');

@@ -38,6 +38,12 @@ export default function Home() {
             >
               View Files
             </Link>
+            <Link 
+              href="/reports"
+              className="bg-green-600 text-white px-8 py-3 rounded-lg font-medium hover:bg-green-700 transition-colors"
+            >
+              View Reports
+            </Link>
           </div>
         </div>
 

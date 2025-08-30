@@ -2,10 +2,12 @@
 
 import { useState, useEffect } from "react";
 import { useRouter, useParams } from "next/navigation";
+import Link from "next/link";
 import { questions } from "@/data/questions";
 import Editor from "@monaco-editor/react";
 import { Play, Send, FileText, ArrowLeft, Bot, Eye, Clock, CheckCircle, Loader2 } from "lucide-react";
 import { toast, Toaster } from "sonner";
+import { Navbar } from "@/components/navbar";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { useTheme } from "@/components/theme-provider";
 import { apiService, type SubmissionFile } from "@/services/api";
@@ -329,33 +331,33 @@ export default function ProblemPage() {
     <div className="min-h-screen bg-custom-light dark:bg-custom-dark-primary">
       <Toaster position="top-right" />
       
-      {/* Header */}
-      <header className="bg-white dark:bg-custom-dark-secondary shadow-sm border-b border-gray-200 dark:border-custom-dark-primary">
+      <Navbar variant="minimal" />
+      
+      {/* Problem Header */}
+      <div className="bg-white dark:bg-custom-dark-secondary shadow-sm border-b border-gray-200 dark:border-custom-dark-primary">
         <div className="w-full px-4">
-          <div className="flex justify-between items-center py-3">
-            <div className="flex items-center space-x-4">
-              <button
-                onClick={() => router.push("/problems")}
-                className="flex items-center text-gray-600 dark:text-custom-light hover:text-custom-accent dark:hover:text-custom-accent transition-colors"
-              >
-                <ArrowLeft className="w-5 h-5 mr-1" />
-                Back to Problems
-              </button>
-              <h1 className="text-xl font-bold text-custom-dark-primary dark:text-custom-light">
-                {question.id}. {question.title}
-              </h1>
-              <span
-                className={`px-2 py-1 text-xs font-medium rounded-full ${getDifficultyColor(
-                  question.difficulty
-                )}`}
-              >
-                {question.difficulty}
-              </span>
-            </div>
-            <ThemeToggle />
+          <div className="flex items-center space-x-4 py-3">
+            <button
+              onClick={() => router.push("/problems")}
+              className="flex items-center text-gray-600 dark:text-custom-light hover:text-custom-accent dark:hover:text-custom-accent transition-colors"
+            >
+              <ArrowLeft className="w-5 h-5 mr-1" />
+              Back to Problems
+            </button>
+            <span className="text-gray-300 dark:text-gray-600">|</span>
+            <h1 className="text-xl font-bold text-custom-dark-primary dark:text-custom-light">
+              {question.id}. {question.title}
+            </h1>
+            <span
+              className={`px-2 py-1 text-xs font-medium rounded-full ${getDifficultyColor(
+                question.difficulty
+              )}`}
+            >
+              {question.difficulty}
+            </span>
           </div>
         </div>
-      </header>
+      </div>
 
       <div className="w-full px-2 py-2">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-1 h-[calc(100vh-120px)]">

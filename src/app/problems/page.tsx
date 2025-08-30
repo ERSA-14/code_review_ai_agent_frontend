@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { questions } from "@/data/questions";
-import { ThemeToggle } from "@/components/theme-toggle";
+import { Navbar } from "@/components/navbar";
 
 export default function ProblemsPage() {
   const getDifficultyColor = (difficulty: string) => {
@@ -20,23 +20,7 @@ export default function ProblemsPage() {
 
   return (
     <div className="min-h-screen bg-custom-light dark:bg-custom-dark-primary">
-      {/* Header */}
-      <header className="bg-white dark:bg-custom-dark-secondary shadow-sm border-b border-gray-200 dark:border-custom-dark-primary">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center py-4">
-            <h1 className="text-2xl font-bold text-custom-dark-primary dark:text-custom-light">CodePlatform</h1>
-            <div className="flex items-center space-x-4">
-              <nav className="flex space-x-4">
-                <Link href="/" className="text-gray-600 dark:text-custom-light hover:text-custom-accent dark:hover:text-custom-accent transition-colors">Home</Link>
-                <Link href="/problems" className="text-custom-accent dark:text-custom-accent font-medium">Problems</Link>
-                <a href="#" className="text-gray-600 dark:text-custom-light hover:text-custom-accent dark:hover:text-custom-accent transition-colors">Contest</a>
-                <a href="#" className="text-gray-600 dark:text-custom-light hover:text-custom-accent dark:hover:text-custom-accent transition-colors">Discuss</a>
-              </nav>
-              <ThemeToggle />
-            </div>
-          </div>
-        </div>
-      </header>
+      <Navbar />
 
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">

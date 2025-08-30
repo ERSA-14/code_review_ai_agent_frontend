@@ -79,6 +79,16 @@ export function Navbar({ variant = "default" }: NavbarProps) {
               >
                 Files
               </Link>
+              <Link 
+                href="/reports" 
+                className={`transition-colors ${
+                  isActive("/reports") 
+                    ? "text-custom-accent dark:text-custom-accent font-medium" 
+                    : "text-gray-600 dark:text-custom-light hover:text-custom-accent dark:hover:text-custom-accent"
+                }`}
+              >
+                Reports
+              </Link>
             </nav>
             {/* <ThemeToggle /> */}
           </div>

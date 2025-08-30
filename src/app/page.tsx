@@ -32,6 +32,12 @@ export default function Home() {
             >
               Upload Code
             </Link>
+            <Link 
+              href="/files"
+              className="bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 px-8 py-3 rounded-lg font-medium hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors"
+            >
+              View Files
+            </Link>
           </div>
         </div>
 

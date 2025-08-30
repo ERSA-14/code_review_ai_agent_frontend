@@ -69,6 +69,16 @@ export function Navbar({ variant = "default" }: NavbarProps) {
               >
                 Upload
               </Link>
+              <Link 
+                href="/files" 
+                className={`transition-colors ${
+                  isActive("/files") 
+                    ? "text-custom-accent dark:text-custom-accent font-medium" 
+                    : "text-gray-600 dark:text-custom-light hover:text-custom-accent dark:hover:text-custom-accent"
+                }`}
+              >
+                Files
+              </Link>
             </nav>
             {/* <ThemeToggle /> */}
           </div>

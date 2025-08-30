@@ -3,6 +3,7 @@
 import React from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
+import rehypeHighlight from 'rehype-highlight';
 import { X } from 'lucide-react';
 
 interface MarkdownReportProps {
@@ -41,15 +42,16 @@ export const MarkdownReport: React.FC<MarkdownReportProps> = ({
 
         {/* Content */}
         <div className="p-6 overflow-y-auto max-h-[calc(90vh-140px)]">
-          <div className="prose prose-sm max-w-none dark:prose-invert prose-headings:text-gray-900 dark:prose-headings:text-white prose-p:text-gray-700 dark:prose-p:text-gray-300 prose-strong:text-gray-900 dark:prose-strong:text-white prose-code:text-blue-600 dark:prose-code:text-blue-400 prose-pre:bg-gray-100 dark:prose-pre:bg-gray-900 prose-pre:border prose-pre:border-gray-200 dark:prose-pre:border-gray-700 prose-blockquote:border-l-blue-500 prose-blockquote:bg-blue-50 dark:prose-blockquote:bg-blue-900/20 prose-table:text-sm prose-th:bg-gray-50 dark:prose-th:bg-gray-800 prose-th:text-gray-900 dark:prose-th:text-white prose-td:text-gray-700 dark:prose-td:text-gray-300">
+          <div className="prose prose-sm max-w-none dark:prose-invert prose-headings:text-gray-900 dark:prose-headings:text-white prose-p:text-gray-700 dark:prose-p:text-gray-300 prose-strong:text-gray-900 dark:prose-strong:text-white prose-blockquote:border-l-blue-500 prose-blockquote:bg-blue-50 dark:prose-blockquote:bg-blue-900/20 prose-table:text-sm prose-th:bg-gray-50 dark:prose-th:bg-gray-800 prose-th:text-gray-900 dark:prose-th:text-white prose-td:text-gray-700 dark:prose-td:text-gray-300">
             <ReactMarkdown 
               remarkPlugins={[remarkGfm]}
+              rehypePlugins={[rehypeHighlight]}
               components={{
                 // Custom rendering for code blocks
                 pre: ({ children, ...props }) => (
                   <pre 
                     {...props} 
-                    className="bg-gray-900 text-gray-100 p-4 rounded-lg overflow-x-auto border border-gray-200 dark:border-gray-700"
+                    className="bg-gray-900 text-gray-100 p-4 rounded-lg overflow-x-auto border border-gray-800"
                   >
                     {children}
                   </pre>
@@ -67,7 +69,7 @@ export const MarkdownReport: React.FC<MarkdownReportProps> = ({
                     );
                   }
                   return (
-                    <code {...props} className="text-gray-100 font-mono text-sm">
+                    <code {...props} className="bg-transparent text-gray-100 font-mono text-sm">
                       {children}
                     </code>
                   );

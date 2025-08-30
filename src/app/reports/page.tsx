@@ -4,6 +4,9 @@ import { useState, useEffect } from "react";
 import { Navbar } from "@/components/navbar";
 import { FileText, Calendar, Eye, Loader2, AlertCircle } from "lucide-react";
 import { apiService, ReportListItem } from "@/services/api";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
+import rehypeHighlight from "rehype-highlight";
 
 export default function ReportsPage() {
   const [reports, setReports] = useState<ReportListItem[]>([]);
@@ -135,9 +138,112 @@ export default function ReportsPage() {
 
           <div className="bg-white rounded-lg shadow-lg p-8">
             <div className="prose max-w-none">
-              <div className="whitespace-pre-wrap text-gray-800 leading-relaxed">
+              <ReactMarkdown
+                remarkPlugins={[remarkGfm]}
+                rehypePlugins={[rehypeHighlight]}
+                components={{
+                  pre: ({ children, ...props }) => (
+                    <pre
+                      {...props}
+                      className="bg-gray-900 text-gray-100 p-4 rounded-lg overflow-x-auto border border-gray-800"
+                    >
+                      {children}
+                    </pre>
+                  ),
+          code: ({ children, ...props }: any) => {
+                    const isInline = !String(children).includes("\n");
+                    if (isInline) {
+                      return (
+                        <code
+                          {...props}
+                          className="bg-gray-100 text-blue-700 px-1 py-0.5 rounded text-sm font-mono"
+                        >
+                          {children}
+                        </code>
+                      );
+                    }
+                    return (
+            <code {...props} className="bg-transparent text-gray-100 font-mono text-sm">
+                        {children}
+                      </code>
+                    );
+                  },
+                  table: ({ children, ...props }) => (
+                    <div className="overflow-x-auto my-4">
+                      <table
+                        {...props}
+                        className="min-w-full divide-y divide-gray-200 border border-gray-200 rounded-lg"
+                      >
+                        {children}
+                      </table>
+                    </div>
+                  ),
+                  th: ({ children, ...props }) => (
+                    <th
+                      {...props}
+                      className="px-4 py-2 bg-gray-50 text-left text-xs font-medium text-gray-600 uppercase tracking-wider border-b border-gray-200"
+                    >
+                      {children}
+                    </th>
+                  ),
+                  td: ({ children, ...props }) => (
+                    <td
+                      {...props}
+                      className="px-4 py-2 text-sm text-gray-900 border-b border-gray-200"
+                    >
+                      {children}
+                    </td>
+                  ),
+                  blockquote: ({ children, ...props }) => (
+                    <blockquote
+                      {...props}
+                      className="border-l-4 border-blue-500 bg-blue-50 p-4 my-4 rounded-r-lg text-gray-800"
+                    >
+                      {children}
+                    </blockquote>
+                  ),
+                  h1: ({ children, ...props }) => (
+                    <h1
+                      {...props}
+                      className="text-2xl font-bold text-gray-900 mt-6 mb-4 border-b border-gray-200 pb-2"
+                    >
+                      {children}
+                    </h1>
+                  ),
+                  h2: ({ children, ...props }) => (
+                    <h2 {...props} className="text-xl font-semibold text-gray-900 mt-6 mb-3">
+                      {children}
+                    </h2>
+                  ),
+                  h3: ({ children, ...props }) => (
+                    <h3 {...props} className="text-lg font-medium text-gray-900 mt-4 mb-2">
+                      {children}
+                    </h3>
+                  ),
+                  ul: ({ children, ...props }) => (
+                    <ul {...props} className="list-disc list-inside space-y-1 my-4 text-gray-800">
+                      {children}
+                    </ul>
+                  ),
+                  ol: ({ children, ...props }) => (
+                    <ol {...props} className="list-decimal list-inside space-y-1 my-4 text-gray-800">
+                      {children}
+                    </ol>
+                  ),
+                  li: ({ children, ...props }) => (
+                    <li {...props} className="ml-4">
+                      {children}
+                    </li>
+                  ),
+                  p: ({ children, ...props }) => (
+                    <p {...props} className="text-gray-800 leading-relaxed my-3">
+                      {children}
+                    </p>
+                  ),
+                }}
+              >
                 {reportContent}
-              </div>
+              </ReactMarkdown>
             </div>
           </div>
         </main>

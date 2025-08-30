@@ -59,14 +59,8 @@ export function Navbar({ variant = "default" }: NavbarProps) {
               >
                 Problems
               </Link>
-              <a href="#" className="text-gray-600 dark:text-custom-light hover:text-custom-accent dark:hover:text-custom-accent transition-colors">
-                Contest
-              </a>
-              <a href="#" className="text-gray-600 dark:text-custom-light hover:text-custom-accent dark:hover:text-custom-accent transition-colors">
-                Discuss
-              </a>
             </nav>
-            <ThemeToggle />
+            {/* <ThemeToggle /> */}
           </div>
         </div>
       </div>

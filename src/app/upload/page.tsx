@@ -104,43 +104,54 @@ export default function UploadPage() {
   };
 
   return (
-    <div className="min-h-screen bg-custom-light dark:bg-custom-dark-primary">
+    <div className="min-h-screen bg-gray-50">
       <Navbar />
       
       <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-custom-dark-primary dark:text-custom-light mb-4">
+          <h1 className="text-3xl font-bold text-gray-900 mb-4">
             Upload Code for Review
           </h1>
-          <p className="text-lg text-gray-600 dark:text-custom-light/80">
+          <p className="text-lg text-gray-600">
             Upload your code file to get detailed AI-powered feedback and suggestions
           </p>
         </div>
 
-        <div className="bg-white dark:bg-custom-dark-secondary rounded-lg shadow-lg p-8">
+        <div className="bg-white rounded-lg shadow-lg p-8">
           {!selectedFile ? (
             <>
               <div
                 className={`border-2 border-dashed rounded-lg p-12 text-center transition-colors cursor-pointer ${
                 isDragOver 
-                    ? "border-custom-accent bg-gray-100 hover:bg-gray-200" 
-                    : "border-gray-300 dark:border-gray-600 hover:bg-gray-200 dark:hover:bg-gray-100"
-                } hover:bg-gray-50 dark:hover:bg-gray-100`}
+                    ? "border-blue-500 bg-blue-50" 
+                    : "border-gray-300 hover:border-gray-400"
+                }`}
 
                 onDrop={handleDrop}
                 onDragOver={handleDragOver}
                 onDragLeave={handleDragLeave}
                 onClick={() => fileInputRef.current?.click()}
               >
-              <Upload className="mx-auto h-12 w-12 text-gray-400 dark:text-gray-500 mb-4" />
-              <h3 className="text-lg font-medium text-custom-dark-primary dark:text-custom-light mb-2">
+              <Upload className="mx-auto h-12 w-12 text-gray-400 mb-4" />
+              <h3 className="text-lg font-medium text-gray-900 mb-2">
                 Drop your code file here
               </h3>
-              <p className="text-gray-600 dark:text-custom-light/80 mb-4">
+              <p className="text-gray-600 mb-4">
                 or click anywhere in this area to browse
               </p>
               <div className="space-y-3">
-                
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    fileInputRef.current?.click();
+                  }}
+                  className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 rounded-lg font-medium transition-colors text-lg"
+                >
+                  Choose File
+                </button>
+                <p className="text-sm text-gray-500">
+                  Click the button above or drag & drop a file
+                </p>
               </div>
               <input
                 ref={fileInputRef}
@@ -149,31 +160,31 @@ export default function UploadPage() {
                 onChange={handleFileInputChange}
                 accept=".js,.jsx,.ts,.tsx,.py,.java,.cpp,.c,.cs,.php,.rb,.go,.rs,.swift,.kt,.dart,.vue,.html,.css,.scss,.less,.json,.xml,.yaml,.yml,.sql"
               />
-              <p className="text-sm text-gray-500 dark:text-custom-light/60 mt-4">
+              <p className="text-sm text-gray-500 mt-4">
                 Supported formats: JavaScript, TypeScript, Python, Java, C++, C#, PHP, Ruby, Go, Rust, Swift, Kotlin, Dart, Vue, HTML, CSS, JSON, XML, YAML, SQL
               </p>
-              <p className="text-sm text-gray-500 dark:text-custom-light/60">
+              <p className="text-sm text-gray-500">
                 Maximum file size: 10MB
               </p>
             </div>
             </>
           ) : (
             <div className="space-y-6">
-              <div className="flex items-center justify-between p-4 bg-gray-50 dark:bg-custom-dark-primary rounded-lg">
+              <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
                 <div className="flex items-center space-x-3">
-                  <File className="h-8 w-8 text-custom-accent" />
+                  <File className="h-8 w-8 text-blue-600" />
                   <div>
-                    <h3 className="font-medium text-custom-dark-primary dark:text-custom-light">
+                    <h3 className="font-medium text-gray-900">
                       {selectedFile.name}
                     </h3>
-                    <p className="text-sm text-gray-600 dark:text-custom-light/80">
+                    <p className="text-sm text-gray-600">
                       {formatFileSize(selectedFile.size)}
                     </p>
                   </div>
                 </div>
                 <button
                   onClick={removeFile}
-                  className="text-gray-400 hover:text-gray-600 dark:hover:text-custom-light/80 transition-colors"
+                  className="text-gray-400 hover:text-gray-600 transition-colors"
                 >
                   <X className="h-5 w-5" />
                 </button>
@@ -188,20 +199,20 @@ export default function UploadPage() {
                   <div className="flex justify-center space-x-3">
                     <button
                       onClick={removeFile}
-                      className="bg-gray-200 hover:bg-gray-300 dark:bg-gray-600 dark:hover:bg-gray-500 text-gray-800 dark:text-gray-200 px-6 py-2 rounded-lg font-medium transition-colors"
+                      className="bg-gray-200 hover:bg-gray-300 text-gray-800 px-6 py-2 rounded-lg font-medium transition-colors"
                     >
                       Upload Another
                     </button>
                     <a
                       href="/files"
-                      className="bg-blue-500 hover:bg-blue-700 text-white px-4 py-2 rounded-md font-medium transition-colors"
+                      className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg font-medium transition-colors"
                     >
                       View All Files
                     </a>
                   </div>
                 </div>
               ) : uploadError ? (
-                <div className="flex items-center justify-center space-x-2 text-red-600 dark:text-red-400">
+                <div className="flex items-center justify-center space-x-2 text-red-600">
                   <AlertCircle className="h-5 w-5" />
                   <span className="font-medium">{uploadError}</span>
                 </div>
@@ -210,10 +221,10 @@ export default function UploadPage() {
                   <button
                     onClick={handleUpload}
                     disabled={isUploading}
-                    className={`px-8 py-3 rounded-lg font-medium transition-colors border border-transparent ${
+                    className={`px-8 py-3 rounded-lg font-medium transition-colors ${
                       isUploading
-                        ? "bg-gray-400 cursor-not-allowed"
-                        : "bg-custom-accent hover:bg-custom-accent/90 hover:border-custom-accent/50 cursor-pointer"
+                        ? "bg-gray-400 cursor-not-allowed text-white"
+                        : "bg-blue-600 hover:bg-blue-700 text-white"
                     }`}
                   >
                     {isUploading ? "Uploading..." : "Upload for Review"}
@@ -224,11 +235,11 @@ export default function UploadPage() {
           )}
         </div>
 
-        <div className="mt-8 bg-custom-accent/10 border border-custom-accent/20 rounded-lg p-6">
-          <h3 className="font-medium text-custom-dark-primary dark:text-custom-light mb-2">
+        <div className="mt-8 bg-blue-50 border border-blue-200 rounded-lg p-6">
+          <h3 className="font-medium text-gray-900 mb-2">
             What happens next?
           </h3>
-          <ul className="text-sm text-gray-600 dark:text-custom-light/80 space-y-1">
+          <ul className="text-sm text-gray-600 space-y-1">
             <li>• Your code will be analyzed by our AI system</li>
             <li>• We'll check for potential bugs, security issues, and performance problems</li>
             <li>• You'll receive detailed feedback with suggestions for improvement</li>

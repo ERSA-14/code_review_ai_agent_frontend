@@ -17,6 +17,15 @@ export default function ReportsPage() {
     fetchReports();
   }, []);
 
+  // Auto-open a report if ?file=<originalFilename> is present
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const filename = params.get('file');
+    if (filename) {
+      handleViewReport(filename);
+    }
+  }, []);
+
   const fetchReports = async () => {
     setIsLoading(true);
     setError(null);
@@ -42,12 +51,12 @@ export default function ReportsPage() {
     }
   };
 
-  const handleViewReport = async (reportFile: string) => {
-    setLoadingReport(reportFile);
-    setSelectedReport(reportFile);
+  const handleViewReport = async (originalFilename: string) => {
+    setLoadingReport(originalFilename);
+    setSelectedReport(originalFilename);
     
     try {
-      const result = await apiService.getExistingReport(reportFile);
+      const result = await apiService.getExistingReport(originalFilename);
       
       if (result.success && result.report) {
         setReportContent(result.report);
@@ -246,15 +255,15 @@ export default function ReportsPage() {
                     
                     <div className="flex items-center space-x-2">
                       <button 
-                        onClick={() => handleViewReport(report.reportFile)}
-                        disabled={loadingReport === report.reportFile}
+                        onClick={() => handleViewReport(report.originalFilename)}
+                        disabled={loadingReport === report.originalFilename}
                         className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center space-x-2 ${
-                          loadingReport === report.reportFile
+                          loadingReport === report.originalFilename
                             ? 'bg-gray-400 cursor-not-allowed text-white'
                             : 'bg-blue-600 hover:bg-blue-700 text-white'
                         }`}
                       >
-                        {loadingReport === report.reportFile ? (
+                        {loadingReport === report.originalFilename ? (
                           <>
                             <Loader2 className="h-4 w-4 animate-spin" />
                             <span>Loading...</span>

@@ -97,8 +97,9 @@ export default function FilesPage() {
   };
 
   const handleViewReport = (filename: string) => {
-    // Navigate to reports page; could be enhanced to deep-link/highlight
-    window.location.href = '/reports';
+  // Navigate to reports page and deep-link to this specific report
+  const url = `/reports?file=${encodeURIComponent(filename)}`;
+  window.location.href = url;
   };
 
   const getFileExtension = (filename: string) => {

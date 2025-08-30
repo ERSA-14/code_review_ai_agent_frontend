@@ -2,13 +2,15 @@
 
 import { useState, useRef } from "react";
 import { Navbar } from "@/components/navbar";
-import { Upload, File, X, CheckCircle } from "lucide-react";
+import { Upload, File, X, CheckCircle, AlertCircle } from "lucide-react";
+import { apiService } from "@/services/api";
 
 export default function UploadPage() {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [isDragOver, setIsDragOver] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [uploadSuccess, setUploadSuccess] = useState(false);
+  const [uploadError, setUploadError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleFileSelect = (file: File) => {
@@ -33,6 +35,7 @@ export default function UploadPage() {
 
     setSelectedFile(file);
     setUploadSuccess(false);
+    setUploadError(null);
   };
 
   const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
@@ -66,18 +69,27 @@ export default function UploadPage() {
     if (!selectedFile) return;
 
     setIsUploading(true);
+    setUploadError(null);
     
-    // Simulate upload delay for demo purposes
-    // In real implementation, this would be an API call to the backend
-    setTimeout(() => {
+    try {
+      const result = await apiService.uploadFile(selectedFile);
+      
+      if (result.success) {
+        setUploadSuccess(true);
+      } else {
+        setUploadError(result.message || 'Upload failed');
+      }
+    } catch (error) {
+      setUploadError('Upload failed. Please try again.');
+    } finally {
       setIsUploading(false);
-      setUploadSuccess(true);
-    }, 2000);
+    }
   };
 
   const removeFile = () => {
     setSelectedFile(null);
     setUploadSuccess(false);
+    setUploadError(null);
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
     }
@@ -107,29 +119,29 @@ export default function UploadPage() {
 
         <div className="bg-white dark:bg-custom-dark-secondary rounded-lg shadow-lg p-8">
           {!selectedFile ? (
-            <div
-              className={`border-2 border-dashed rounded-lg p-12 text-center transition-colors ${
-                isDragOver
-                  ? "border-custom-accent bg-custom-accent/10 dark:bg-custom-accent/20"
-                  : "border-gray-300 dark:border-gray-600 hover:border-gray-400 dark:hover:border-gray-500"
-              }`}
-              onDrop={handleDrop}
-              onDragOver={handleDragOver}
-              onDragLeave={handleDragLeave}
-            >
+            <>
+              <div
+                className={`border-2 border-dashed rounded-lg p-12 text-center transition-colors cursor-pointer ${
+                isDragOver 
+                    ? "border-custom-accent bg-gray-100 hover:bg-gray-200" 
+                    : "border-gray-300 dark:border-gray-600 hover:bg-gray-200 dark:hover:bg-gray-100"
+                } hover:bg-gray-50 dark:hover:bg-gray-100`}
+
+                onDrop={handleDrop}
+                onDragOver={handleDragOver}
+                onDragLeave={handleDragLeave}
+                onClick={() => fileInputRef.current?.click()}
+              >
               <Upload className="mx-auto h-12 w-12 text-gray-400 dark:text-gray-500 mb-4" />
               <h3 className="text-lg font-medium text-custom-dark-primary dark:text-custom-light mb-2">
                 Drop your code file here
               </h3>
               <p className="text-gray-600 dark:text-custom-light/80 mb-4">
-                or click to browse
+                or click anywhere in this area to browse
               </p>
-              <button
-                onClick={() => fileInputRef.current?.click()}
-                className="bg-custom-accent hover:bg-custom-accent/90 text-white px-6 py-2 rounded-lg font-medium transition-colors"
-              >
-                Choose File
-              </button>
+              <div className="space-y-3">
+                
+              </div>
               <input
                 ref={fileInputRef}
                 type="file"
@@ -144,6 +156,7 @@ export default function UploadPage() {
                 Maximum file size: 10MB
               </p>
             </div>
+            </>
           ) : (
             <div className="space-y-6">
               <div className="flex items-center justify-between p-4 bg-gray-50 dark:bg-custom-dark-primary rounded-lg">
@@ -167,20 +180,41 @@ export default function UploadPage() {
               </div>
 
               {uploadSuccess ? (
-                <div className="flex items-center justify-center space-x-2 text-green-600 dark:text-green-400">
-                  <CheckCircle className="h-5 w-5" />
-                  <span className="font-medium">File uploaded successfully!</span>
+                <div className="space-y-4">
+                  <div className="flex items-center justify-center space-x-2 text-green-600 dark:text-green-400">
+                    <CheckCircle className="h-5 w-5" />
+                    <span className="font-medium">File uploaded successfully!</span>
+                  </div>
+                  <div className="flex justify-center space-x-3">
+                    <button
+                      onClick={removeFile}
+                      className="bg-gray-200 hover:bg-gray-300 dark:bg-gray-600 dark:hover:bg-gray-500 text-gray-800 dark:text-gray-200 px-6 py-2 rounded-lg font-medium transition-colors"
+                    >
+                      Upload Another
+                    </button>
+                    <a
+                      href="/files"
+                      className="bg-blue-500 hover:bg-blue-700 text-white px-4 py-2 rounded-md font-medium transition-colors"
+                    >
+                      View All Files
+                    </a>
+                  </div>
+                </div>
+              ) : uploadError ? (
+                <div className="flex items-center justify-center space-x-2 text-red-600 dark:text-red-400">
+                  <AlertCircle className="h-5 w-5" />
+                  <span className="font-medium">{uploadError}</span>
                 </div>
               ) : (
                 <div className="flex justify-center">
                   <button
                     onClick={handleUpload}
                     disabled={isUploading}
-                    className={`px-8 py-3 rounded-lg font-medium transition-colors ${
+                    className={`px-8 py-3 rounded-lg font-medium transition-colors border border-transparent ${
                       isUploading
                         ? "bg-gray-400 cursor-not-allowed"
-                        : "bg-custom-accent hover:bg-custom-accent/90"
-                    } text-white`}
+                        : "bg-custom-accent hover:bg-custom-accent/90 hover:border-custom-accent/50 cursor-pointer"
+                    }`}
                   >
                     {isUploading ? "Uploading..." : "Upload for Review"}
                   </button>

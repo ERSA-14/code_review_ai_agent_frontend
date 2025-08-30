@@ -22,7 +22,13 @@ export default function FilesPage() {
       const result = await apiService.listFiles();
       
       if (result.success) {
-        setFiles(result.files);
+        // Sort files by upload date in reverse chronological order (newest first)
+        const sortedFiles = result.files.sort((a, b) => {
+          const dateA = new Date(a.uploadDate).getTime();
+          const dateB = new Date(b.uploadDate).getTime();
+          return dateB - dateA; // Reverse order (newest first)
+        });
+        setFiles(sortedFiles);
       } else {
         setError(result.error || 'Failed to load files');
       }

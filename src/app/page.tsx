@@ -22,18 +22,15 @@ export default function Home() {
           <div className="flex justify-center gap-4">
             <Link 
               href="/problems"
-              className="bg-custom-accent text-white px-8 py-3 rounded-lg font-medium hover:bg-custom-accent/80 transition-colors"
+              className="bg-custom-accent/10 border border-custom-accent text-custom-accent px-8 py-3 rounded-lg font-medium hover:bg-gray-100 transition-colors"
             >
               Start Solving
             </Link>
-            <button className="border border-custom-accent text-custom-accent px-8 py-3 rounded-lg font-medium hover:bg-custom-accent/10 transition-colors">
-              Learn More
-            </button>
           </div>
         </div>
 
         {/* Features Grid */}
-        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
+        <div className="grid md:grid-cols-2 lg:grid-cols-2 gap-8">
           <div className="text-center">
             <div className="bg-custom-accent/10 w-16 h-16 rounded-lg flex items-center justify-center mx-auto mb-4">
               <Code className="w-8 h-8 text-custom-accent" />
@@ -55,30 +52,6 @@ export default function Home() {
             </h3>
             <p className="text-gray-600 dark:text-custom-light/70">
               Get detailed feedback on your solutions
-            </p>
-          </div>
-
-          <div className="text-center">
-            <div className="bg-custom-accent/10 w-16 h-16 rounded-lg flex items-center justify-center mx-auto mb-4">
-              <Trophy className="w-8 h-8 text-custom-accent" />
-            </div>
-            <h3 className="text-lg font-semibold text-custom-dark-primary dark:text-custom-light mb-2">
-              Contests
-            </h3>
-            <p className="text-gray-600 dark:text-custom-light/70">
-              Compete with others in coding competitions
-            </p>
-          </div>
-
-          <div className="text-center">
-            <div className="bg-custom-accent/10 w-16 h-16 rounded-lg flex items-center justify-center mx-auto mb-4">
-              <Users className="w-8 h-8 text-custom-accent" />
-            </div>
-            <h3 className="text-lg font-semibold text-custom-dark-primary dark:text-custom-light mb-2">
-              Community
-            </h3>
-            <p className="text-gray-600 dark:text-custom-light/70">
-              Connect and learn with fellow developers
             </p>
           </div>
         </div>

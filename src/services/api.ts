@@ -115,25 +115,85 @@ class ApiService {
     }
   }
 
+  // Helper function to detect language from filename
+  private getLanguageFromFilename(filename: string): string {
+    const extension = filename.split('.').pop()?.toLowerCase();
+    switch (extension) {
+      case 'js':
+      case 'jsx':
+        return 'javascript';
+      case 'ts':
+      case 'tsx':
+        return 'typescript';
+      case 'py':
+        return 'python';
+      case 'cpp':
+      case 'cxx':
+      case 'cc':
+        return 'cpp';
+      case 'c':
+        return 'c';
+      case 'java':
+        return 'java';
+      case 'cs':
+        return 'csharp';
+      case 'php':
+        return 'php';
+      case 'rb':
+        return 'ruby';
+      case 'go':
+        return 'go';
+      case 'rs':
+        return 'rust';
+      case 'swift':
+        return 'swift';
+      case 'kt':
+        return 'kotlin';
+      default:
+        return 'unknown';
+    }
+  }
+
   async generateReport(
     filename: string, 
     problemStatement?: string, 
     additionalContext?: string
   ): Promise<GenerateReportResponse> {
     try {
+      const language = this.getLanguageFromFilename(filename);
+      
+      // Include language in additional context since backend doesn't use the language field
+      const enhancedContext = `Language: ${language}\nFile Extension: .${filename.split('.').pop()}\n${additionalContext || ''}`;
+      
+      // Simple, clean request body
+      const requestBody = {
+        problemStatement: problemStatement || '',
+        additionalContext: enhancedContext
+      };
+      
       const response = await fetch(`${API_BASE_URL}/report/file/${filename}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          problemStatement,
-          additionalContext,
-        }),
+        body: JSON.stringify(requestBody),
       });
 
-      return await response.json();
+      // Always try to get the JSON response, even for errors
+      const result = await response.json();
+      
+      if (!response.ok) {
+        console.error('Backend error response:', result);
+        return {
+          success: false,
+          message: result.message || 'Report generation failed',
+          error: result.error || `HTTP error! status: ${response.status}`
+        };
+      }
+
+      return result;
     } catch (error) {
+      console.error('API Error:', error);
       return {
         success: false,
         message: 'Report generation failed',

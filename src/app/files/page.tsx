@@ -10,6 +10,8 @@ export default function FilesPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [generatingReport, setGeneratingReport] = useState<string | null>(null);
+  const [reportsMap, setReportsMap] = useState<Record<string, boolean>>({});
+  const [rowErrors, setRowErrors] = useState<Record<string, string>>({});
 
   useEffect(() => {
     fetchFiles();
@@ -20,19 +22,23 @@ export default function FilesPage() {
     setError(null);
     
     try {
-      const result = await apiService.listFiles();
-      
-      if (result.success) {
-        // Sort files by upload date in reverse chronological order (newest first)
-        const sortedFiles = result.files.sort((a, b) => {
-          const dateA = new Date(a.uploadDate).getTime();
-          const dateB = new Date(b.uploadDate).getTime();
-          return dateB - dateA; // Reverse order (newest first)
-        });
-        setFiles(sortedFiles);
-      } else {
-        setError(result.error || 'Failed to load files');
+      // Fetch files and any existing reports in one go
+      const combined = await apiService.getFilesWithReports();
+
+      // Sort files by upload date in reverse chronological order (newest first)
+      const sortedFiles = combined.files.sort((a, b) => {
+        const dateA = new Date(a.uploadDate).getTime();
+        const dateB = new Date(b.uploadDate).getTime();
+        return dateB - dateA;
+      });
+      setFiles(sortedFiles);
+
+      // Build a quick lookup map for which files already have a report
+      const map: Record<string, boolean> = {};
+      for (const f of sortedFiles) {
+        map[f.filename] = Boolean(combined.reports[f.filename]?.success);
       }
+      setReportsMap(map);
     } catch (err) {
       setError('Failed to load files. Please try again.');
     } finally {
@@ -55,6 +61,8 @@ export default function FilesPage() {
 
   const handleGenerateReport = async (filename: string) => {
     setGeneratingReport(filename);
+    // Clear any previous inline error for this row
+    setRowErrors(prev => ({ ...prev, [filename]: '' }));
     
     try {
       console.log('Generating report for:', filename);
@@ -62,19 +70,35 @@ export default function FilesPage() {
       // Call the actual API to generate the report
       const result = await apiService.generateReport(filename, "Code review analysis", "General review");
       
+      console.log('API Result:', result); // Debug log
+      
       if (result.success) {
-        alert(`Report generated successfully for ${filename}! You can view it in the Reports page.`);
-        // Optionally refresh the page or redirect to reports
-        window.location.href = '/reports';
+        // Mark as having a report and allow viewing without redirect
+        setReportsMap(prev => ({ ...prev, [filename]: true }));
       } else {
-        alert(`Failed to generate report: ${result.message}`);
+        console.error('Report generation failed:', result.error); // Debug log
+        // Gracefully show inline error for known backend issue
+        const msg = typeof result.error === 'string' ? result.error : (result.message || 'Failed to generate report');
+        if (msg.toLowerCase().includes('language is not defined')) {
+          setRowErrors(prev => ({
+            ...prev,
+            [filename]: 'Report generation is temporarily unavailable due to a server issue. Please try again later.'
+          }));
+        } else {
+          setRowErrors(prev => ({ ...prev, [filename]: result.message || 'Failed to generate report.' }));
+        }
       }
     } catch (error) {
       console.error('Error generating report:', error);
-      alert('Failed to generate report. Please try again.');
+      setRowErrors(prev => ({ ...prev, [filename]: 'Failed to generate report. Please try again.' }));
     } finally {
       setGeneratingReport(null);
     }
+  };
+
+  const handleViewReport = (filename: string) => {
+    // Navigate to reports page; could be enhanced to deep-link/highlight
+    window.location.href = '/reports';
   };
 
   const getFileExtension = (filename: string) => {
@@ -200,26 +224,38 @@ export default function FilesPage() {
                     </div>
                     
                     <div className="flex items-center space-x-2">
-                      <button 
-                        onClick={() => handleGenerateReport(file.filename)}
-                        disabled={generatingReport === file.filename}
-                        className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                          generatingReport === file.filename
-                            ? 'bg-gray-400 cursor-not-allowed text-white'
-                            : 'bg-blue-600 hover:bg-blue-700 text-white'
-                        }`}
-                      >
-                        {generatingReport === file.filename ? (
-                          <div className="flex items-center space-x-2">
-                            <Loader2 className="h-4 w-4 animate-spin" />
-                            <span>Generating...</span>
-                          </div>
-                        ) : (
-                          'Generate Report'
-                        )}
-                      </button>
+                      {reportsMap[file.filename] ? (
+                        <button
+                          onClick={() => handleViewReport(file.filename)}
+                          className="px-4 py-2 rounded-lg text-sm font-medium transition-colors bg-green-600 hover:bg-green-700 text-white"
+                        >
+                          View Report
+                        </button>
+                      ) : (
+                        <button 
+                          onClick={() => handleGenerateReport(file.filename)}
+                          disabled={generatingReport === file.filename}
+                          className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                            generatingReport === file.filename
+                              ? 'bg-gray-400 cursor-not-allowed text-white'
+                              : 'bg-blue-600 hover:bg-blue-700 text-white'
+                          }`}
+                        >
+                          {generatingReport === file.filename ? (
+                            <div className="flex items-center space-x-2">
+                              <Loader2 className="h-4 w-4 animate-spin" />
+                              <span>Generating...</span>
+                            </div>
+                          ) : (
+                            'Generate Report'
+                          )}
+                        </button>
+                      )}
                     </div>
                   </div>
+                  {rowErrors[file.filename] && (
+                    <div className="mt-3 text-sm text-red-600">{rowErrors[file.filename]}</div>
+                  )}
                 </div>
               ))}
             </div>

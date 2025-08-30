@@ -60,7 +60,27 @@ export interface ListFilesResponse {
 }
 
 class ApiService {
-  async uploadFile(code: string, filename: string, language: string): Promise<UploadResponse> {
+  async uploadFile(file: File): Promise<UploadResponse> {
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+
+      const response = await fetch(`${API_BASE_URL}/upload`, {
+        method: 'POST',
+        body: formData,
+      });
+
+      return await response.json();
+    } catch (error) {
+      return {
+        success: false,
+        message: 'Upload failed',
+        error: error instanceof Error ? error.message : 'Unknown error'
+      };
+    }
+  }
+
+  async uploadFileFromCode(code: string, filename: string, language: string): Promise<UploadResponse> {
     try {
       const formData = new FormData();
       const blob = new Blob([code], { type: 'text/plain' });

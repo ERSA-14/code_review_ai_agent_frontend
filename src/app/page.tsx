@@ -26,6 +26,12 @@ export default function Home() {
             >
               Start Solving
             </Link>
+            <Link 
+              href="/upload"
+              className="bg-custom-accent text-white px-8 py-3 rounded-lg font-medium hover:bg-custom-accent/90 transition-colors"
+            >
+              Upload Code
+            </Link>
           </div>
         </div>
 

@@ -557,36 +557,51 @@ export default function EvaluationPage() {
 
             {/* Progress Bar */}
             <div className="mb-6">
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-sm text-gray-600">
-                  Progress: {evaluationBatch.progress.processedFiles} / {evaluationBatch.progress.totalFiles}
-                </span>
-                <span className="text-sm text-gray-600">
-                  {evaluationBatch.progress.percentage}%
-                </span>
-              </div>
-              <div className="w-full bg-gray-200 rounded-full h-2">
+                <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center space-x-3">
+                    <span className="text-sm font-medium text-gray-700">
+                    Processing: {evaluationBatch.progress.processedFiles} / {evaluationBatch.progress.totalFiles} files
+                    </span>
+                    {evaluationBatch.status === 'processing' && (
+                    <div className="flex items-center space-x-2 text-blue-600">
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                        <span className="text-sm font-medium">
+                        Evaluating<span className="animate-pulse">...</span>
+                        </span>
+                    </div>
+                    )}
+                </div>
+                <div className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${
+                    evaluationBatch.status === 'processing' 
+                    ? 'bg-blue-100 text-blue-800'
+                    : evaluationBatch.status === 'completed'
+                    ? 'bg-green-100 text-green-800'
+                    : evaluationBatch.status === 'failed'
+                    ? 'bg-red-100 text-red-800'
+                    : 'bg-gray-100 text-gray-800'
+                }`}>
+                    {evaluationBatch.status === 'processing' && <Loader2 className="mr-1 h-3 w-3 animate-spin" />}
+                    {evaluationBatch.status === 'completed' && <CheckCircle className="mr-1 h-3 w-3" />}
+                    {evaluationBatch.status === 'failed' && <XCircle className="mr-1 h-3 w-3" />}
+                    <span className="capitalize">{evaluationBatch.status}</span>
+                </div>
+                </div>
+                <div className="w-full bg-gray-200 rounded-full h-3">
                 <div
-                  className="bg-blue-600 h-2 rounded-full transition-all duration-300"
-                  style={{ width: `${evaluationBatch.progress.percentage}%` }}
+                    className={`h-3 rounded-full transition-all duration-500 ease-out ${
+                    evaluationBatch.status === 'completed'
+                        ? 'bg-green-500'
+                        : evaluationBatch.status === 'failed'
+                        ? 'bg-red-500'
+                        : 'bg-blue-500'
+                    }`}
+                    style={{ 
+                    width: evaluationBatch.status === 'completed' 
+                        ? '100%' 
+                        : `${Math.max(5, evaluationBatch.progress.percentage)}%`
+                    }}
                 />
-              </div>
-            </div>
-
-            {/* Status Summary */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-              <div className="bg-blue-50 p-4 rounded-lg">
-                <h4 className="font-medium text-blue-900">Status</h4>
-                <p className="text-2xl font-bold text-blue-700 capitalize">{evaluationBatch.status}</p>
-              </div>
-              <div className="bg-green-50 p-4 rounded-lg">
-                <h4 className="font-medium text-green-900">Successful</h4>
-                <p className="text-2xl font-bold text-green-700">{evaluationBatch.progress.successfulEvaluations}</p>
-              </div>
-              <div className="bg-red-50 p-4 rounded-lg">
-                <h4 className="font-medium text-red-900">Failed</h4>
-                <p className="text-2xl font-bold text-red-700">{evaluationBatch.progress.failedEvaluations}</p>
-              </div>
+                </div>
             </div>
 
             {/* Results Table */}

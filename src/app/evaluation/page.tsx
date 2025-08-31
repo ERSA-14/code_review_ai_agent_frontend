@@ -530,30 +530,30 @@ export default function EvaluationPage() {
           <>
             {/* Evaluation Results Section */}
             <div className="bg-white rounded-lg shadow-lg p-8">
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-xl font-semibold text-gray-900 flex items-center">
-                <Users className="mr-2 h-5 w-5" />
-                Evaluation Results
-              </h2>
-              <div className="flex space-x-2">
-                {evaluationBatch.status === 'completed' && (
+              <div className="flex items-center justify-between mb-6">
+                <h2 className="text-xl font-semibold text-gray-900 flex items-center">
+                  <Users className="mr-2 h-5 w-5 text-blue-600" />
+                  Evaluation Results
+                </h2>
+                <div className="flex space-x-2">
+                  {evaluationBatch.status === 'completed' && (
+                    <button
+                      onClick={downloadCSV}
+                      className="inline-flex items-center px-4 py-2 text-sm font-medium rounded-lg text-white bg-green-600 hover:bg-green-700 transition-colors"
+                    >
+                      <Download className="mr-2 h-4 w-4" />
+                      Download CSV
+                    </button>
+                  )}
                   <button
-                    onClick={downloadCSV}
-                    className="inline-flex items-center px-4 py-2 text-sm font-medium rounded-lg text-white bg-green-600 hover:bg-green-700 transition-colors"
+                    onClick={resetForm}
+                    className="inline-flex items-center px-4 py-2 text-sm font-medium rounded-lg text-gray-700 bg-gray-100 hover:bg-gray-200 transition-colors"
                   >
-                    <Download className="mr-2 h-4 w-4" />
-                    Download CSV
+                    <RotateCcw className="mr-2 h-4 w-4" />
+                    New Evaluation
                   </button>
-                )}
-                <button
-                  onClick={resetForm}
-                  className="inline-flex items-center px-4 py-2 text-sm font-medium rounded-lg text-gray-700 bg-gray-100 hover:bg-gray-200 transition-colors"
-                >
-                  <RotateCcw className="mr-2 h-4 w-4" />
-                  New Evaluation
-                </button>
+                </div>
               </div>
-            </div>
 
             {/* Progress Bar */}
             <div className="mb-6">

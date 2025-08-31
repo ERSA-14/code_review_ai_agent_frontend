@@ -97,6 +97,35 @@ export interface BulkDeleteResponse {
   }>;
 }
 
+export interface BulkReportGenerationResponse {
+  success: boolean;
+  message: string;
+  batchId: string;
+  totalRequested: number;
+  successCount: number;
+  errorCount: number;
+  processedFiles: Array<{
+    filename: string;
+    success: boolean;
+    reportFilename?: string;
+    cached?: boolean;
+    generatedAt: string;
+    error?: string;
+  }>;
+  summary: {
+    totalFiles: number;
+    successCount: number;
+    errorCount: number;
+    skippedCount: number;
+    totalTimeMs: number;
+    averageTimePerFile: number;
+  };
+  errors: Array<{
+    filename: string;
+    error: string;
+  }>;
+}
+
 export interface ListFilesResponse {
   success: boolean;
   count: number;
@@ -408,6 +437,60 @@ class ApiService {
         totalRequested: filenames.length,
         successCount: 0,
         errorCount: filenames.length,
+        errors: filenames.map(filename => ({
+          filename,
+          error: error instanceof Error ? error.message : 'Unknown error'
+        }))
+      };
+    }
+  }
+
+  async generateBulkReports(
+    filenames: string[],
+    options: {
+      problemStatement?: string;
+      additionalContext?: string;
+      maxConcurrent?: number;
+      forceRegenerate?: boolean;
+      skipExisting?: boolean;
+    } = {}
+  ): Promise<BulkReportGenerationResponse> {
+    try {
+      const response = await fetch(`${API_BASE_URL}/report/bulk`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          filenames,
+          options: {
+            problemStatement: options.problemStatement || '',
+            additionalContext: options.additionalContext || '',
+            maxConcurrent: options.maxConcurrent || 3,
+            forceRegenerate: options.forceRegenerate || false,
+            skipExisting: options.skipExisting || true
+          }
+        })
+      });
+
+      return await response.json();
+    } catch (error) {
+      return {
+        success: false,
+        message: 'Bulk report generation failed',
+        batchId: '',
+        totalRequested: filenames.length,
+        successCount: 0,
+        errorCount: filenames.length,
+        processedFiles: [],
+        summary: {
+          totalFiles: filenames.length,
+          successCount: 0,
+          errorCount: filenames.length,
+          skippedCount: 0,
+          totalTimeMs: 0,
+          averageTimePerFile: 0
+        },
         errors: filenames.map(filename => ({
           filename,
           error: error instanceof Error ? error.message : 'Unknown error'

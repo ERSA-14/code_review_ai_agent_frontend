@@ -445,6 +445,44 @@ class ApiService {
     }
   }
 
+  async deleteReports(filenames: string[]): Promise<BulkDeleteResponse> {
+    try {
+      const response = await fetch(`${API_BASE_URL}/report/bulk`, {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ filenames })
+      });
+
+      const result = await response.json();
+      
+      // Transform backend response to match BulkDeleteResponse interface
+      return {
+        success: result.success,
+        message: result.message,
+        deletedFiles: result.deletedReports?.map((r: any) => r.filename) || [],
+        totalRequested: result.totalRequested || filenames.length,
+        successCount: result.successCount || 0,
+        errorCount: result.errorCount || 0,
+        errors: result.errors || []
+      };
+    } catch (error) {
+      return {
+        success: false,
+        message: 'Bulk report delete failed',
+        deletedFiles: [],
+        totalRequested: filenames.length,
+        successCount: 0,
+        errorCount: filenames.length,
+        errors: filenames.map(filename => ({
+          filename,
+          error: error instanceof Error ? error.message : 'Unknown error'
+        }))
+      };
+    }
+  }
+
   async generateBulkReports(
     filenames: string[],
     options: {

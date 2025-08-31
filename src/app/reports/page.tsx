@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { Navbar } from "@/components/navbar";
-import { FileText, Calendar, Eye, Loader2, AlertCircle } from "lucide-react";
+import { FileText, Calendar, Eye, Loader2, AlertCircle, Trash2, CheckSquare, Square } from "lucide-react";
 import { apiService, ReportListItem } from "@/services/api";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
@@ -15,6 +15,8 @@ export default function ReportsPage() {
   const [selectedReport, setSelectedReport] = useState<string | null>(null);
   const [reportContent, setReportContent] = useState<string | null>(null);
   const [loadingReport, setLoadingReport] = useState<string | null>(null);
+  const [selectedReports, setSelectedReports] = useState<Set<string>>(new Set());
+  const [isDeletingReports, setIsDeletingReports] = useState(false);
 
   useEffect(() => {
     fetchReports();
@@ -72,6 +74,59 @@ export default function ReportsPage() {
       setReportContent(null);
     } finally {
       setLoadingReport(null);
+    }
+  };
+
+  const handleSelectReport = (filename: string) => {
+    const newSelected = new Set(selectedReports);
+    if (newSelected.has(filename)) {
+      newSelected.delete(filename);
+    } else {
+      newSelected.add(filename);
+    }
+    setSelectedReports(newSelected);
+  };
+
+  const handleSelectAll = () => {
+    if (selectedReports.size === reports.length) {
+      setSelectedReports(new Set());
+    } else {
+      setSelectedReports(new Set(reports.map(report => report.originalFilename)));
+    }
+  };
+
+  const handleDeleteSelected = async () => {
+    if (selectedReports.size === 0) return;
+
+    const filenames = Array.from(selectedReports);
+    if (!confirm(`Are you sure you want to delete ${filenames.length} report(s)? This action cannot be undone.`)) {
+      return;
+    }
+
+    setIsDeletingReports(true);
+    setError(null);
+
+    try {
+      const result = await apiService.deleteReports(filenames);
+      
+      if (result.success) {
+        // Remove deleted reports from the list
+        setReports(prevReports => 
+          prevReports.filter(report => !selectedReports.has(report.originalFilename))
+        );
+        setSelectedReports(new Set());
+        
+        // Show success message
+        if (result.successCount > 0) {
+          alert(`Successfully deleted ${result.successCount} report(s)`);
+        }
+      } else {
+        setError(result.message || 'Failed to delete reports');
+      }
+    } catch (err) {
+      setError('Failed to delete reports. Please try again.');
+    } finally {
+      setIsDeletingReports(false);
     }
   };
 
@@ -317,9 +372,45 @@ export default function ReportsPage() {
         ) : (
           <div className="bg-white rounded-lg shadow-lg overflow-hidden">
             <div className="px-6 py-4 border-b border-gray-200">
-              <h2 className="text-lg font-medium text-gray-900">
-                Reports ({reports.length})
-              </h2>
+              <div className="flex items-center justify-between">
+                <h2 className="text-lg font-medium text-gray-900">
+                  Reports ({reports.length})
+                </h2>
+                
+                {/* Selection controls */}
+                <div className="flex items-center space-x-4">
+                  <button
+                    onClick={handleSelectAll}
+                    className="flex items-center space-x-2 text-sm text-gray-600 hover:text-gray-900 transition-colors"
+                  >
+                    {selectedReports.size === reports.length ? (
+                      <CheckSquare className="h-4 w-4" />
+                    ) : (
+                      <Square className="h-4 w-4" />
+                    )}
+                    <span>
+                      {selectedReports.size === reports.length ? 'Deselect All' : 'Select All'}
+                    </span>
+                  </button>
+                  
+                  {selectedReports.size > 0 && (
+                    <button
+                      onClick={handleDeleteSelected}
+                      disabled={isDeletingReports}
+                      className="flex items-center space-x-2 bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      {isDeletingReports ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        <Trash2 className="h-4 w-4" />
+                      )}
+                      <span>
+                        Delete Selected ({selectedReports.size})
+                      </span>
+                    </button>
+                  )}
+                </div>
+              </div>
             </div>
             
             <div className="divide-y divide-gray-200">
@@ -327,6 +418,18 @@ export default function ReportsPage() {
                 <div key={index} className="p-6 hover:bg-gray-50 transition-colors">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center space-x-4 flex-1">
+                      {/* Checkbox */}
+                      <button
+                        onClick={() => handleSelectReport(report.originalFilename)}
+                        className="flex-shrink-0 p-1 rounded hover:bg-gray-200 transition-colors"
+                      >
+                        {selectedReports.has(report.originalFilename) ? (
+                          <CheckSquare className="h-5 w-5 text-blue-600" />
+                        ) : (
+                          <Square className="h-5 w-5 text-gray-400" />
+                        )}
+                      </button>
+                      
                       <div className="flex-shrink-0">
                         <FileText className="h-8 w-8 text-blue-600" />
                       </div>

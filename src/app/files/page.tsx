@@ -2,16 +2,18 @@
 
 import { useState, useEffect } from "react";
 import { Navbar } from "@/components/navbar";
-import { File, Calendar, HardDrive, Loader2, AlertCircle } from "lucide-react";
+import { File, Calendar, HardDrive, Loader2, AlertCircle, Trash2, CheckSquare, Square } from "lucide-react";
 import { apiService, SubmissionFile } from "@/services/api";
 
 export default function FilesPage() {
   const [files, setFiles] = useState<SubmissionFile[]>([]);
+  const [selectedFiles, setSelectedFiles] = useState<Set<string>>(new Set());
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [generatingReport, setGeneratingReport] = useState<string | null>(null);
   const [reportsMap, setReportsMap] = useState<Record<string, boolean>>({});
   const [rowErrors, setRowErrors] = useState<Record<string, string>>({});
+  const [isDeletingSelected, setIsDeletingSelected] = useState(false);
 
   useEffect(() => {
     fetchFiles();
@@ -39,10 +41,67 @@ export default function FilesPage() {
         map[f.filename] = Boolean(combined.reports[f.filename]?.success);
       }
       setReportsMap(map);
+      
+      // Clear selections if files have changed
+      setSelectedFiles(new Set());
     } catch (err) {
       setError('Failed to load files. Please try again.');
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const toggleFileSelection = (filename: string) => {
+    setSelectedFiles(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(filename)) {
+        newSet.delete(filename);
+      } else {
+        newSet.add(filename);
+      }
+      return newSet;
+    });
+  };
+
+  const selectAllFiles = () => {
+    setSelectedFiles(new Set(files.map(file => file.filename)));
+  };
+
+  const deselectAllFiles = () => {
+    setSelectedFiles(new Set());
+  };
+
+  const deleteSelectedFiles = async () => {
+    if (selectedFiles.size === 0) return;
+
+    setIsDeletingSelected(true);
+    setError(null);
+    
+    try {
+      const filesToDelete = Array.from(selectedFiles);
+      const result = await apiService.deleteFiles(filesToDelete);
+      
+      if (result.success) {
+        // Remove deleted files from the list
+        setFiles(prev => prev.filter(file => !selectedFiles.has(file.filename)));
+        setSelectedFiles(new Set());
+        
+        // Show success message
+        if (result.deletedFiles.length > 0) {
+          setError(null);
+        }
+        
+        // If there were partial failures, show them
+        if (result.errors && result.errors.length > 0) {
+          setError(`Some files could not be deleted: ${result.errors.map((e: any) => e.filename).join(', ')}`);
+        }
+      } else {
+        setError(result.message || 'Failed to delete files');
+      }
+    } catch (err) {
+      setError('Failed to delete files. Please try again.');
+    } finally {
+      setIsDeletingSelected(false);
     }
   };
 
@@ -143,13 +202,39 @@ export default function FilesPage() {
               Manage your uploaded code files and view their details
             </p>
           </div>
-          <button
-            onClick={fetchFiles}
-            disabled={isLoading}
-            className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Refresh'}
-          </button>
+          <div className="flex items-center space-x-3">
+            {selectedFiles.size > 0 && (
+              <>
+                <div className="flex items-center space-x-2 text-sm">
+                  <button
+                    onClick={selectedFiles.size === files.length ? deselectAllFiles : selectAllFiles}
+                    className="text-blue-600 hover:text-blue-700 font-medium"
+                  >
+                    {selectedFiles.size === files.length ? 'Deselect All' : 'Select All'}
+                  </button>
+                  <span className="text-gray-400">|</span>
+                  <button
+                    onClick={deleteSelectedFiles}
+                    disabled={isDeletingSelected}
+                    className="text-red-600 hover:text-red-700 font-medium flex items-center space-x-1"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                    <span>
+                      {isDeletingSelected ? 'Deleting...' : `Delete Selected (${selectedFiles.size})`}
+                    </span>
+                  </button>
+                </div>
+                <div className="w-px h-6 bg-gray-300"></div>
+              </>
+            )}
+            <button
+              onClick={fetchFiles}
+              disabled={isLoading}
+              className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Refresh'}
+            </button>
+          </div>
         </div>
 
         {error && (
@@ -187,16 +272,48 @@ export default function FilesPage() {
         ) : (
           <div className="bg-white rounded-lg shadow-lg overflow-hidden">
             <div className="px-6 py-4 border-b border-gray-200">
-              <h2 className="text-lg font-medium text-gray-900">
-                Files ({files.length})
-              </h2>
+              <div className="flex items-center justify-between">
+                <h2 className="text-lg font-medium text-gray-900">
+                  Files ({files.length})
+                </h2>
+                {files.length > 0 && (
+                  <div className="flex items-center space-x-4 text-sm text-gray-600">
+                    <span>{selectedFiles.size} selected</span>
+                    <button
+                      onClick={() => selectedFiles.size > 0 ? deselectAllFiles() : selectAllFiles()}
+                      className="flex items-center space-x-1 text-blue-600 hover:text-blue-700"
+                    >
+                      {selectedFiles.size === files.length ? (
+                        <CheckSquare className="h-4 w-4" />
+                      ) : (
+                        <Square className="h-4 w-4" />
+                      )}
+                      <span>Select All</span>
+                    </button>
+                  </div>
+                )}
+              </div>
             </div>
             
             <div className="divide-y divide-gray-200">
               {files.map((file, index) => (
-                <div key={index} className="p-6 hover:bg-gray-50 transition-colors">
+                <div 
+                  key={index} 
+                  className={`p-6 transition-colors ${
+                    selectedFiles.has(file.filename) 
+                      ? 'bg-blue-50 border-l-4 border-l-blue-500' 
+                      : 'hover:bg-gray-50'
+                  }`}
+                >
                   <div className="flex items-center justify-between">
                     <div className="flex items-center space-x-4 flex-1">
+                      <input
+                        type="checkbox"
+                        checked={selectedFiles.has(file.filename)}
+                        onChange={() => toggleFileSelection(file.filename)}
+                        className="w-5 h-5 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 focus:ring-2 cursor-pointer"
+                      />
+                      
                       <div className="flex-shrink-0">
                         <File className="h-8 w-8 text-blue-600" />
                       </div>

@@ -126,6 +126,44 @@ export interface BulkReportGenerationResponse {
   }>;
 }
 
+export interface StudentEvaluation {
+  name: string;
+  regNo: string;
+  filename: string;
+  score: number | null;
+  maxScore: number;
+  percentage: number | null;
+  grade: string | null;
+  status: 'pending' | 'completed' | 'failed';
+  error?: string;
+  report?: string;
+}
+
+export interface EvaluationBatchResponse {
+  success: boolean;
+  message?: string;
+  batchId: string;
+  status: 'processing' | 'completed' | 'failed';
+  createdAt: string;
+  updatedAt: string;
+  progress: {
+    totalFiles: number;
+    processedFiles: number;
+    successfulEvaluations: number;
+    failedEvaluations: number;
+    percentage: number;
+  };
+  problemStatement: string;
+  students: StudentEvaluation[];
+  errors: Array<{
+    filename: string;
+    error: string;
+  }>;
+  aiProvider: string;
+  statusUrl?: string;
+  csvUrl?: string;
+}
+
 export interface ListFilesResponse {
   success: boolean;
   count: number;
@@ -593,6 +631,172 @@ class ApiService {
           error: error instanceof Error ? error.message : 'Unknown error'
         }))
       };
+    }
+  }
+
+  // Student Evaluation Methods
+  async evaluateStudentBatch(files: File[], problemStatement: string, additionalContext?: string): Promise<EvaluationBatchResponse> {
+    try {
+      const formData = new FormData();
+      files.forEach(file => {
+        formData.append('files', file);
+      });
+      formData.append('problemStatement', problemStatement);
+      if (additionalContext) {
+        formData.append('additionalContext', additionalContext);
+      }
+
+      const response = await fetch(`${API_BASE_URL}/evaluate/batch`, {
+        method: 'POST',
+        body: formData,
+      });
+
+      const result = await response.json();
+      
+      if (result.success) {
+        return {
+          success: true,
+          batchId: result.batchId,
+          status: result.status,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+          progress: {
+            totalFiles: result.totalFiles,
+            processedFiles: 0,
+            successfulEvaluations: 0,
+            failedEvaluations: 0,
+            percentage: 0
+          },
+          problemStatement,
+          students: [],
+          errors: [],
+          aiProvider: 'Unknown',
+          statusUrl: result.statusUrl,
+          csvUrl: result.csvUrl
+        };
+      } else {
+        return {
+          success: false,
+          message: result.message || 'Failed to start batch evaluation',
+          batchId: '',
+          status: 'failed',
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+          progress: {
+            totalFiles: files.length,
+            processedFiles: 0,
+            successfulEvaluations: 0,
+            failedEvaluations: files.length,
+            percentage: 0
+          },
+          problemStatement,
+          students: [],
+          errors: files.map(file => ({ filename: file.name, error: 'Failed to start evaluation' })),
+          aiProvider: 'Unknown'
+        };
+      }
+    } catch (error) {
+      return {
+        success: false,
+        message: 'Failed to submit batch evaluation',
+        batchId: '',
+        status: 'failed',
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        progress: {
+          totalFiles: files.length,
+          processedFiles: 0,
+          successfulEvaluations: 0,
+          failedEvaluations: files.length,
+          percentage: 0
+        },
+        problemStatement,
+        students: [],
+        errors: files.map(file => ({ 
+          filename: file.name, 
+          error: error instanceof Error ? error.message : 'Unknown error' 
+        })),
+        aiProvider: 'Unknown'
+      };
+    }
+  }
+
+  async getEvaluationStatus(batchId: string): Promise<EvaluationBatchResponse> {
+    try {
+      const response = await fetch(`${API_BASE_URL}/evaluate/batch/${batchId}`);
+      const result = await response.json();
+
+      if (result.success) {
+        // Convert backend format to frontend format
+        const students: StudentEvaluation[] = (result.students || []).map((student: any) => ({
+          name: student.studentInfo?.name || 'Unknown',
+          regNo: student.studentInfo?.regNo || 'Unknown',
+          filename: student.filename,
+          score: student.score?.totalScore || null,
+          maxScore: student.score?.maxScore || 100,
+          percentage: student.score?.percentage || null,
+          grade: student.score?.grade || null,
+          status: student.status === 'success' ? 'completed' : 
+                  student.status === 'failed' ? 'failed' : 'pending',
+          error: student.error,
+          report: student.report
+        }));
+
+        return {
+          success: true,
+          batchId: result.batchId,
+          status: result.status,
+          createdAt: result.createdAt,
+          updatedAt: result.updatedAt,
+          progress: {
+            totalFiles: result.totalFiles,
+            processedFiles: result.processedFiles,
+            successfulEvaluations: result.successfulEvaluations,
+            failedEvaluations: result.failedEvaluations,
+            percentage: Math.round((result.processedFiles / result.totalFiles) * 100)
+          },
+          problemStatement: result.problemStatement,
+          students,
+          errors: result.errors || [],
+          aiProvider: result.aiProvider
+        };
+      } else {
+        throw new Error(result.message || 'Failed to get evaluation status');
+      }
+    } catch (error) {
+      return {
+        success: false,
+        message: error instanceof Error ? error.message : 'Unknown error',
+        batchId,
+        status: 'failed',
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        progress: {
+          totalFiles: 0,
+          processedFiles: 0,
+          successfulEvaluations: 0,
+          failedEvaluations: 0,
+          percentage: 0
+        },
+        problemStatement: '',
+        students: [],
+        errors: [{ filename: 'Unknown', error: error instanceof Error ? error.message : 'Unknown error' }],
+        aiProvider: 'Unknown'
+      };
+    }
+  }
+
+  async downloadEvaluationCSV(batchId: string): Promise<Blob> {
+    try {
+      const response = await fetch(`${API_BASE_URL}/evaluate/batch/${batchId}/csv`);
+      
+      if (!response.ok) {
+        throw new Error('Failed to download CSV');
+      }
+
+      return await response.blob();
+    } catch (error) {
+      throw new Error(error instanceof Error ? error.message : 'Failed to download CSV');
     }
   }
 }

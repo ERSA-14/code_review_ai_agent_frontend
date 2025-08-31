@@ -15,7 +15,9 @@ import {
   RotateCcw,
   Play,
   GraduationCap,
-  BarChart3
+  Trash2,
+  File,
+  X
 } from "lucide-react";
 import { apiService, StudentEvaluation, EvaluationBatchResponse } from "@/services/api";
 
@@ -316,15 +318,15 @@ export default function EvaluationPage() {
   const invalidFileCount = validationResults.filter(r => !r.isValid).length;
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-custom-dark-primary">
+    <div className="min-h-screen bg-gray-50">
       <Navbar />
       
       <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-custom-light mb-4">
+          <h1 className="text-3xl font-bold text-gray-900 mb-4">
             Student Code Evaluation
           </h1>
-          <p className="text-lg text-gray-600 dark:text-gray-300">
+          <p className="text-lg text-gray-600">
             Upload student code files and provide a problem statement to generate batch evaluations with AI-powered scores
           </p>
         </div>
@@ -332,240 +334,204 @@ export default function EvaluationPage() {
         {!evaluationBatch ? (
           <>
             {/* File Upload Section */}
-            <div className="bg-white dark:bg-custom-dark-secondary rounded-lg shadow-lg p-8 mb-6">
+            <div className="bg-white rounded-lg shadow-lg p-8 mb-6">
               {selectedFiles.length === 0 ? (
-                <div
-                  className={`border-2 border-dashed rounded-lg p-12 text-center transition-colors cursor-pointer ${
-                    isDragOver 
-                      ? "border-blue-500 bg-blue-50 dark:bg-blue-900/20" 
-                      : "border-gray-300 dark:border-gray-600 hover:border-gray-400 dark:hover:border-gray-500"
-                  }`}
-                  onDrop={handleDrop}
-                  onDragOver={handleDragOver}
-                  onDragLeave={handleDragLeave}
-                  onClick={() => fileInputRef.current?.click()}
-                >
-                  <Upload className="mx-auto h-12 w-12 text-gray-400 dark:text-gray-500 mb-4" />
-                  <h3 className="text-lg font-medium text-gray-900 dark:text-custom-light mb-2">
-                    Drop student code files here
-                  </h3>
-                  <p className="text-gray-600 dark:text-gray-300 mb-4">
-                    Each file must start with "Name: " and "Reg No: " headers
-                  </p>
-                  <div className="space-y-3">
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        fileInputRef.current?.click();
-                      }}
-                      className="bg-custom-accent hover:bg-blue-700 text-white px-8 py-3 rounded-lg font-medium transition-colors text-lg"
-                    >
-                      Choose Student Files
-                    </button>
-                    <p className="text-sm text-gray-500 dark:text-gray-400">
-                      Click the button above or drag & drop files
+                <>
+                  <div
+                    className={`border-2 border-dashed rounded-lg p-12 text-center transition-colors cursor-pointer ${
+                      isDragOver 
+                        ? "border-blue-500 bg-blue-50" 
+                        : "border-gray-300 hover:border-gray-400"
+                    }`}
+                    onDrop={handleDrop}
+                    onDragOver={handleDragOver}
+                    onDragLeave={handleDragLeave}
+                    onClick={() => fileInputRef.current?.click()}
+                  >
+                    <Upload className="mx-auto h-12 w-12 text-gray-400 mb-4" />
+                    <h3 className="text-lg font-medium text-gray-900 mb-2">
+                      Drop student code files here
+                    </h3>
+                    <p className="text-gray-600 mb-4">
+                      or click anywhere in this area to browse (each file must have Name: and Reg No: headers)
+                    </p>
+                    <div className="space-y-3">
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          fileInputRef.current?.click();
+                        }}
+                        className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 rounded-lg font-medium transition-colors text-lg"
+                      >
+                        Choose Student Files
+                      </button>
+                      <p className="text-sm text-gray-500">
+                        Click the button above or drag & drop files
+                      </p>
+                    </div>
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      multiple
+                      className="hidden"
+                      onChange={handleFileInputChange}
+                      accept=".js,.jsx,.ts,.tsx,.py,.java,.cpp,.c,.cs,.php,.rb,.go,.rs,.swift,.kt,.dart"
+                    />
+                    <p className="text-sm text-gray-500 mt-4">
+                      Supported formats: JavaScript, TypeScript, Python, Java, C++, C#, PHP, Ruby, Go, Rust, Swift, Kotlin, Dart
+                    </p>
+                    <p className="text-sm text-gray-500">
+                      Maximum file size: 5MB per file. Each file must start with "Name: " and "Reg No: " headers
                     </p>
                   </div>
-                  <input
-                    ref={fileInputRef}
-                    type="file"
-                    multiple
-                    className="hidden"
-                    onChange={handleFileInputChange}
-                    accept=".js,.jsx,.ts,.tsx,.py,.java,.cpp,.c,.cs,.php,.rb,.go,.rs,.swift,.kt,.dart"
-                  />
-                  <p className="text-sm text-gray-500 dark:text-gray-400 mt-4">
-                    Supported formats: JavaScript, TypeScript, Python, Java, C++, C#, PHP, Ruby, Go, Rust, Swift, Kotlin, Dart
-                  </p>
-                  <p className="text-sm text-gray-500 dark:text-gray-400">
-                    Maximum file size: 5MB per file. Each file must start with 'Name:' and 'Reg No:' headers
-                  </p>
-                </div>
+                </>
               ) : (
                 <div className="space-y-6">
                   <div className="flex items-center justify-between">
-                    <h3 className="text-lg font-medium text-gray-900 dark:text-custom-light">
+                    <h3 className="text-lg font-medium text-gray-900">
                       Selected Files ({selectedFiles.length})
                     </h3>
                     <button
                       onClick={clearAllFiles}
-                      className="text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300 text-sm font-medium flex items-center space-x-1"
+                      className="text-red-600 hover:text-red-700 text-sm font-medium flex items-center space-x-1"
                     >
-                      <XCircle className="h-4 w-4" />
+                      <Trash2 className="h-4 w-4" />
                       <span>Clear All</span>
                     </button>
                   </div>
 
                   <div className="max-h-60 overflow-y-auto space-y-2">
                     {selectedFiles.map((file, index) => (
-                      <div key={index} className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                      <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                         <div className="flex items-center space-x-3">
-                          <FileText className="h-6 w-6 text-custom-accent" />
+                          <File className="h-6 w-6 text-blue-600" />
                           <div>
-                            <h4 className="font-medium text-gray-900 dark:text-custom-light">
+                            <h4 className="font-medium text-gray-900">
                               {file.name}
                             </h4>
-                            <p className="text-sm text-gray-600 dark:text-gray-300">
+                            <p className="text-sm text-gray-600">
                               {formatFileSize(file.size)}
                             </p>
                           </div>
                         </div>
                         <button
                           onClick={() => removeFile(index)}
-                          className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
+                          className="text-gray-400 hover:text-gray-600 transition-colors"
                         >
-                          <XCircle className="h-5 w-5" />
+                          <X className="h-5 w-5" />
                         </button>
                       </div>
                     ))}
+                  </div>
+
+                  {/* Validation Results Display */}
+                  {validationResults.length > 0 && (
+                    <div className="p-4 bg-gray-50 rounded-lg">
+                      <h4 className="font-medium text-gray-900 mb-3 flex items-center">
+                        <FileText className="mr-2 h-5 w-5" />
+                        File Validation Results
+                        {isValidating && <Loader2 className="ml-2 h-4 w-4 animate-spin" />}
+                      </h4>
+                      <div className="space-y-2">
+                        {validationResults.map((result, index) => (
+                          <div key={index} className="flex items-center justify-between">
+                            <div className="flex items-center space-x-2">
+                              {result.isValid ? (
+                                <CheckCircle className="h-4 w-4 text-green-600" />
+                              ) : (
+                                <AlertCircle className="h-4 w-4 text-red-600" />
+                              )}
+                              <span className="text-sm text-gray-900">{result.file.name}</span>
+                              {result.isValid && (
+                                <span className="text-sm text-gray-500">
+                                  ({result.name} - {result.regNo})
+                                </span>
+                              )}
+                            </div>
+                            {result.error && (
+                              <span className="text-sm text-red-600">{result.error}</span>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Problem Statement Form */}
+                  <div className="space-y-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Problem Statement *
+                      </label>
+                      <textarea
+                        value={problemStatement}
+                        onChange={(e) => setProblemStatement(e.target.value)}
+                        placeholder="Describe the programming problem or assignment that students were asked to solve..."
+                        className="w-full h-32 p-3 border border-gray-300 rounded-lg text-gray-900 placeholder-gray-500 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        required
+                      />
+                    </div>
+                    
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Additional Context (Optional)
+                      </label>
+                      <textarea
+                        value={additionalContext}
+                        onChange={(e) => setAdditionalContext(e.target.value)}
+                        placeholder="Any additional context or specific evaluation criteria..."
+                        className="w-full h-24 p-3 border border-gray-300 rounded-lg text-gray-900 placeholder-gray-500 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Error Display */}
+                  {error && (
+                    <div className="flex items-center justify-center space-x-2 text-red-600">
+                      <AlertCircle className="h-5 w-5" />
+                      <span className="font-medium">{error}</span>
+                    </div>
+                  )}
+
+                  {/* Start Evaluation Button */}
+                  <div className="flex justify-center">
+                    <button
+                      onClick={startEvaluation}
+                      disabled={isUploading || validFileCount === 0 || !problemStatement.trim()}
+                      className={`px-8 py-3 rounded-lg font-medium transition-colors ${
+                        isUploading || validFileCount === 0 || !problemStatement.trim()
+                          ? "bg-gray-400 cursor-not-allowed text-white"
+                          : "bg-blue-600 hover:bg-blue-700 text-white"
+                      }`}
+                    >
+                      {isUploading ? "Starting Evaluation..." : `Start Evaluation (${validFileCount} valid files)`}
+                    </button>
                   </div>
                 </div>
               )}
             </div>
 
-            {/* File Validation Results */}
-            {selectedFiles.length > 0 && (
-              <div className="bg-white dark:bg-custom-dark-secondary rounded-lg shadow-lg p-6 mb-6">
-                <h3 className="text-lg font-semibold text-gray-900 dark:text-custom-light mb-4 flex items-center">
-                  <FileText className="mr-2 h-5 w-5" />
-                  File Validation
-                  {isValidating && <Loader2 className="ml-2 h-4 w-4 animate-spin" />}
-                </h3>
-                
-                <div className="flex items-center space-x-4 mb-4">
-                  <div className="flex items-center text-green-600 dark:text-green-400">
-                    <CheckCircle className="h-5 w-5 mr-1" />
-                    <span className="font-medium">{validFileCount} Valid</span>
-                  </div>
-                  {invalidFileCount > 0 && (
-                    <div className="flex items-center text-red-600 dark:text-red-400">
-                      <XCircle className="h-5 w-5 mr-1" />
-                      <span className="font-medium">{invalidFileCount} Invalid</span>
-                    </div>
-                  )}
-                </div>
-
-                <div className="space-y-2 max-h-64 overflow-y-auto">
-                  {validationResults.map((result, index) => (
-                    <div
-                      key={index}
-                      className={`flex items-center justify-between p-3 rounded-lg border ${
-                        result.isValid
-                          ? "border-green-200 bg-green-50 dark:border-green-800 dark:bg-green-900/20"
-                          : "border-red-200 bg-red-50 dark:border-red-800 dark:bg-red-900/20"
-                      }`}
-                    >
-                      <div className="flex items-center space-x-3">
-                        {result.isValid ? (
-                          <CheckCircle className="h-5 w-5 text-green-600 dark:text-green-400" />
-                        ) : (
-                          <XCircle className="h-5 w-5 text-red-600 dark:text-red-400" />
-                        )}
-                        <div>
-                          <p className="font-medium text-gray-900 dark:text-custom-light">
-                            {result.file.name}
-                          </p>
-                          {result.isValid ? (
-                            <p className="text-sm text-gray-600 dark:text-gray-300">
-                              {result.name} ({result.regNo})
-                            </p>
-                          ) : (
-                            <p className="text-sm text-red-600 dark:text-red-400">
-                              {result.error}
-                            </p>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* Problem Statement Section */}
-            <div className="bg-white dark:bg-custom-dark-secondary rounded-lg shadow-lg p-6 mb-6">
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-custom-light mb-4">
-                Problem Statement *
-              </h3>
-              <textarea
-                value={problemStatement}
-                onChange={(e) => setProblemStatement(e.target.value)}
-                placeholder="Describe the programming problem or assignment that students were asked to solve..."
-                className="w-full h-32 p-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-custom-dark-primary text-gray-900 dark:text-custom-light placeholder-gray-500 dark:placeholder-gray-400 focus:ring-2 focus:ring-custom-accent focus:border-transparent"
-                required
-              />
-              
-              <h4 className="text-md font-medium text-gray-900 dark:text-custom-light mt-4 mb-2">
-                Additional Context (Optional)
-              </h4>
-              <textarea
-                value={additionalContext}
-                onChange={(e) => setAdditionalContext(e.target.value)}
-                placeholder="Any additional context or specific evaluation criteria..."
-                className="w-full h-24 p-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-custom-dark-primary text-gray-900 dark:text-custom-light placeholder-gray-500 dark:placeholder-gray-400 focus:ring-2 focus:ring-custom-accent focus:border-transparent"
-              />
-            </div>
-
-            {/* Error Display */}
-            {error && (
-              <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4 mb-6">
-                <div className="flex items-center">
-                  <AlertCircle className="h-5 w-5 text-red-600 dark:text-red-400 mr-2" />
-                  <p className="text-red-700 dark:text-red-300">{error}</p>
-                </div>
-              </div>
-            )}
-
-            {/* Start Evaluation Button */}
-            <div className="flex justify-center">
-              <button
-                onClick={startEvaluation}
-                disabled={isUploading || validFileCount === 0 || !problemStatement.trim()}
-                className={`px-8 py-3 rounded-lg font-medium transition-colors ${
-                  isUploading || validFileCount === 0 || !problemStatement.trim()
-                    ? "bg-gray-400 cursor-not-allowed text-white"
-                    : "bg-custom-accent hover:bg-blue-700 text-white"
-                }`}
-              >
-                {isUploading ? (
-                  <>
-                    <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-                    Starting Evaluation...
-                  </>
-                ) : (
-                  <>
-                    <Play className="mr-2 h-5 w-5" />
-                    Start Evaluation ({validFileCount} files)
-                  </>
-                )}
-              </button>
-            </div>
-
             {/* Information Panel */}
-            <div className="mt-8 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-6">
-              <div className="flex items-start space-x-3">
-                <GraduationCap className="h-6 w-6 text-blue-600 dark:text-blue-400 mt-1" />
-                <div>
-                  <h3 className="font-medium text-gray-900 dark:text-custom-light mb-2">
-                    How Student Evaluation Works
-                  </h3>
-                  <ul className="text-sm text-gray-600 dark:text-gray-300 space-y-1">
-                    <li>• Each file must start with "Name: " and "Reg No: " headers</li>
-                    <li>• Files are evaluated based on code quality, logic, correctness, and best practices</li>
-                    <li>• Scores are given out of 100 with letter grades (A+ to F)</li>
-                    <li>• Evaluation typically takes 1-2 minutes per student file</li>
-                    <li>• Results can be downloaded as CSV for easy grade book import</li>
-                    <li>• Progress is tracked in real-time during batch processing</li>
-                  </ul>
-                </div>
-              </div>
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-6">
+              <h3 className="font-medium text-gray-900 mb-2">
+                How Student Evaluation Works
+              </h3>
+              <ul className="text-sm text-gray-600 space-y-1">
+                <li>• Each file must start with "Name: " and "Reg No: " headers</li>
+                <li>• Files are evaluated based on code quality, logic, correctness, and best practices</li>
+                <li>• Scores are given out of 100 with letter grades (A+ to F)</li>
+                <li>• Evaluation typically takes 1-2 minutes per student file</li>
+                <li>• Results can be downloaded as CSV for easy grade book import</li>
+                <li>• Progress is tracked in real-time during batch processing</li>
+              </ul>
             </div>
           </>
         ) : (
-          <div className="bg-white dark:bg-custom-dark-secondary rounded-lg shadow-lg p-6 mb-6">
+          <>
             {/* Evaluation Results Section */}
+            <div className="bg-white rounded-lg shadow-lg p-8">
             <div className="flex items-center justify-between mb-6">
-              <h2 className="text-xl font-semibold text-gray-900 dark:text-custom-light flex items-center">
+              <h2 className="text-xl font-semibold text-gray-900 flex items-center">
                 <Users className="mr-2 h-5 w-5" />
                 Evaluation Results
               </h2>
@@ -581,7 +547,7 @@ export default function EvaluationPage() {
                 )}
                 <button
                   onClick={resetForm}
-                  className="inline-flex items-center px-4 py-2 text-sm font-medium rounded-lg text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
+                  className="inline-flex items-center px-4 py-2 text-sm font-medium rounded-lg text-gray-700 bg-gray-100 hover:bg-gray-200 transition-colors"
                 >
                   <RotateCcw className="mr-2 h-4 w-4" />
                   New Evaluation
@@ -592,173 +558,123 @@ export default function EvaluationPage() {
             {/* Progress Bar */}
             <div className="mb-6">
               <div className="flex items-center justify-between mb-2">
-                <span className="text-sm text-gray-600 dark:text-gray-300">
+                <span className="text-sm text-gray-600">
                   Progress: {evaluationBatch.progress.processedFiles} / {evaluationBatch.progress.totalFiles}
                 </span>
-                <span className="text-sm text-gray-600 dark:text-gray-300">
+                <span className="text-sm text-gray-600">
                   {evaluationBatch.progress.percentage}%
                 </span>
               </div>
-              <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+              <div className="w-full bg-gray-200 rounded-full h-2">
                 <div
-                  className="bg-custom-accent h-2 rounded-full transition-all duration-300"
+                  className="bg-blue-600 h-2 rounded-full transition-all duration-300"
                   style={{ width: `${evaluationBatch.progress.percentage}%` }}
                 />
               </div>
             </div>
 
-            {/* Status Summary - Using upload page pattern */}
+            {/* Status Summary */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-              <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg border border-blue-200 dark:border-blue-800">
-                <div className="flex items-center">
-                  <Clock className="h-5 w-5 text-blue-600 dark:text-blue-400 mr-2" />
-                  <div>
-                    <p className="text-sm text-blue-600 dark:text-blue-400">Status</p>
-                    <p className="font-semibold text-blue-900 dark:text-blue-300 capitalize">
-                      {evaluationBatch.status}
-                    </p>
-                  </div>
-                </div>
+              <div className="bg-blue-50 p-4 rounded-lg">
+                <h4 className="font-medium text-blue-900">Status</h4>
+                <p className="text-2xl font-bold text-blue-700 capitalize">{evaluationBatch.status}</p>
               </div>
-              
-              <div className="bg-green-50 dark:bg-green-900/20 p-4 rounded-lg border border-green-200 dark:border-green-800">
-                <div className="flex items-center">
-                  <CheckCircle className="h-5 w-5 text-green-600 dark:text-green-400 mr-2" />
-                  <div>
-                    <p className="text-sm text-green-600 dark:text-green-400">Successful</p>
-                    <p className="font-semibold text-green-900 dark:text-green-300">
-                      {evaluationBatch.progress.successfulEvaluations}
-                    </p>
-                  </div>
-                </div>
+              <div className="bg-green-50 p-4 rounded-lg">
+                <h4 className="font-medium text-green-900">Successful</h4>
+                <p className="text-2xl font-bold text-green-700">{evaluationBatch.progress.successfulEvaluations}</p>
               </div>
-              
-              <div className="bg-red-50 dark:bg-red-900/20 p-4 rounded-lg border border-red-200 dark:border-red-800">
-                <div className="flex items-center">
-                  <XCircle className="h-5 w-5 text-red-600 dark:text-red-400 mr-2" />
-                  <div>
-                    <p className="text-sm text-red-600 dark:text-red-400">Failed</p>
-                    <p className="font-semibold text-red-900 dark:text-red-300">
-                      {evaluationBatch.progress.failedEvaluations}
-                    </p>
-                  </div>
-                </div>
+              <div className="bg-red-50 p-4 rounded-lg">
+                <h4 className="font-medium text-red-900">Failed</h4>
+                <p className="text-2xl font-bold text-red-700">{evaluationBatch.progress.failedEvaluations}</p>
               </div>
             </div>
 
             {/* Results Table */}
             {evaluationBatch.students.length > 0 && (
-              <div className="overflow-x-auto">
-                <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-                  <thead className="bg-gray-50 dark:bg-gray-800">
-                    <tr>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                        Student
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                        File
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                        Score
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                        Grade
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                        Status
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody className="bg-white dark:bg-custom-dark-secondary divide-y divide-gray-200 dark:divide-gray-700">
-                    {evaluationBatch.students.map((student, index) => (
-                      <tr key={index} className="hover:bg-gray-50 dark:hover:bg-gray-800">
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div>
-                            <p className="text-sm font-medium text-gray-900 dark:text-custom-light">
-                              {student.name}
-                            </p>
-                            <p className="text-sm text-gray-500 dark:text-gray-400">
-                              {student.regNo}
-                            </p>
-                          </div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-custom-light">
-                          {student.filename}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          {student.status === 'completed' && student.score !== null ? (
-                            <div>
-                              <p className="text-sm font-medium text-gray-900 dark:text-custom-light">
-                                {student.score}/{student.maxScore}
-                              </p>
-                              <p className="text-sm text-gray-500 dark:text-gray-400">
-                                {student.percentage}%
-                              </p>
-                            </div>
-                          ) : (
-                            <span className="text-sm text-gray-500 dark:text-gray-400">-</span>
-                          )}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          {student.grade ? (
-                            <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                              student.grade.startsWith('A') ? 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400' :
-                              student.grade.startsWith('B') ? 'bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400' :
-                              student.grade.startsWith('C') ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-400' :
-                              'bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400'
-                            }`}>
-                              {student.grade}
-                            </span>
-                          ) : (
-                            <span className="text-sm text-gray-500 dark:text-gray-400">-</span>
-                          )}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          {student.status === 'completed' ? (
-                            <div className="flex items-center text-green-600 dark:text-green-400">
-                              <CheckCircle className="h-4 w-4 mr-1" />
-                              <span className="text-sm">Completed</span>
-                            </div>
-                          ) : student.status === 'failed' ? (
-                            <div className="flex items-center text-red-600 dark:text-red-400">
-                              <XCircle className="h-4 w-4 mr-1" />
-                              <span className="text-sm">Failed</span>
-                            </div>
-                          ) : (
-                            <div className="flex items-center text-yellow-600 dark:text-yellow-400">
-                              <Loader2 className="h-4 w-4 mr-1 animate-spin" />
-                              <span className="text-sm">Processing</span>
-                            </div>
-                          )}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
-
-            {/* Error Messages */}
-            {evaluationBatch.errors.length > 0 && (
-              <div className="mt-6">
-                <h4 className="text-lg font-medium text-red-600 dark:text-red-400 mb-3">
-                  Evaluation Errors
-                </h4>
+              <div className="p-4 bg-gray-50 rounded-lg">
+                <h4 className="font-medium text-gray-900 mb-3">Student Evaluation Results</h4>
                 <div className="space-y-2">
-                  {evaluationBatch.errors.map((error, index) => (
-                    <div key={index} className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-3">
-                      <p className="text-sm font-medium text-red-800 dark:text-red-300">
-                        {error.filename}
-                      </p>
-                      <p className="text-sm text-red-600 dark:text-red-400">
-                        {error.error}
-                      </p>
+                  {evaluationBatch.students.map((student, index) => (
+                    <div key={index} className="flex items-center justify-between p-3 bg-white rounded border">
+                      <div className="flex items-center space-x-3">
+                        {student.status === 'completed' ? (
+                          <CheckCircle className="h-5 w-5 text-green-600" />
+                        ) : student.status === 'failed' ? (
+                          <XCircle className="h-5 w-5 text-red-600" />
+                        ) : (
+                          <Clock className="h-5 w-5 text-yellow-600" />
+                        )}
+                        <div>
+                          <p className="font-medium text-gray-900">{student.name}</p>
+                          <p className="text-sm text-gray-600">{student.regNo} • {student.filename}</p>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        {student.status === 'completed' && student.score !== null ? (
+                          <div>
+                            <p className="font-medium text-gray-900">
+                              {student.score}/{student.maxScore}
+                            </p>
+                            <div className="flex items-center space-x-2">
+                              <span className="text-sm text-gray-600">{student.percentage}%</span>
+                              {student.grade && (
+                                <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded ${
+                                  student.grade.startsWith('A') ? 'bg-green-100 text-green-800' :
+                                  student.grade.startsWith('B') ? 'bg-blue-100 text-blue-800' :
+                                  student.grade.startsWith('C') ? 'bg-yellow-100 text-yellow-800' :
+                                  'bg-red-100 text-red-800'
+                                }`}>
+                                  {student.grade}
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                        ) : student.status === 'failed' ? (
+                          <span className="text-sm text-red-600">Failed</span>
+                        ) : (
+                          <span className="text-sm text-yellow-600">Processing...</span>
+                        )}
+                      </div>
                     </div>
                   ))}
                 </div>
               </div>
             )}
-          </div>
+
+            {/* Error Messages */}
+            {evaluationBatch.errors.length > 0 && (
+              <div className="mt-6 p-4 bg-red-50 rounded-lg">
+                <h4 className="font-medium text-red-900 mb-3">Evaluation Errors</h4>
+                <div className="space-y-2">
+                  {evaluationBatch.errors.map((error, index) => (
+                    <div key={index} className="text-sm">
+                      <span className="font-medium text-red-800">{error.filename}:</span>
+                      <span className="text-red-600 ml-1">{error.error}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Action Buttons */}
+            <div className="flex justify-center space-x-3 mt-6">
+              <button
+                onClick={resetForm}
+                className="bg-gray-200 hover:bg-gray-300 text-gray-800 px-6 py-2 rounded-lg font-medium transition-colors"
+              >
+                New Evaluation
+              </button>
+              {evaluationBatch.status === 'completed' && (
+                <button
+                  onClick={downloadCSV}
+                  className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg font-medium transition-colors"
+                >
+                  Download Results
+                </button>
+              )}
+            </div>
+            </div>
+          </>
         )}
       </main>
     </div>

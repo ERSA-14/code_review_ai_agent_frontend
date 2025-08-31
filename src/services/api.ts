@@ -732,7 +732,7 @@ class ApiService {
           name: student.studentInfo?.name || 'Unknown',
           regNo: student.studentInfo?.regNo || 'Unknown',
           filename: student.filename,
-          score: student.score?.totalScore || null,
+          score: student.score?.score || null,
           maxScore: student.score?.maxScore || 100,
           percentage: student.score?.percentage || null,
           grade: student.score?.grade || null,

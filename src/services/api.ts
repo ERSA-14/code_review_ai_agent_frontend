@@ -456,25 +456,84 @@ class ApiService {
     } = {}
   ): Promise<BulkReportGenerationResponse> {
     try {
+      const requestBody = {
+        filenames,
+        options: {
+          problemStatement: options.problemStatement || '',
+          additionalContext: options.additionalContext || '',
+          maxConcurrent: options.maxConcurrent || 3,
+          forceRegenerate: options.forceRegenerate || false,
+          skipExisting: options.skipExisting || true
+        }
+      };
+
+      console.log('Bulk report request:', requestBody); // Debug log
+
       const response = await fetch(`${API_BASE_URL}/report/bulk`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify({
-          filenames,
-          options: {
-            problemStatement: options.problemStatement || '',
-            additionalContext: options.additionalContext || '',
-            maxConcurrent: options.maxConcurrent || 3,
-            forceRegenerate: options.forceRegenerate || false,
-            skipExisting: options.skipExisting || true
-          }
-        })
+        body: JSON.stringify(requestBody)
       });
 
-      return await response.json();
+      const result = await response.json();
+      console.log('Bulk report response:', result); // Debug log
+
+      if (!response.ok) {
+        console.error('Backend error response:', result);
+        return {
+          success: false,
+          message: result.message || 'Bulk report generation failed',
+          batchId: '',
+          totalRequested: filenames.length,
+          successCount: 0,
+          errorCount: filenames.length,
+          processedFiles: [],
+          summary: {
+            totalFiles: filenames.length,
+            successCount: 0,
+            errorCount: filenames.length,
+            skippedCount: 0,
+            totalTimeMs: 0,
+            averageTimePerFile: 0
+          },
+          errors: [{
+            filename: 'request',
+            error: result.error || `HTTP error! status: ${response.status}`
+          }]
+        };
+      }
+
+      // Transform backend response to match our interface
+      return {
+        success: result.success,
+        message: result.message,
+        batchId: result.batchId || '',
+        totalRequested: result.summary?.totalRequested || filenames.length,
+        successCount: result.summary?.successCount || 0,
+        errorCount: result.summary?.errorCount || 0,
+        processedFiles: (result.results || []).map((r: any) => ({
+          filename: r.filename,
+          success: r.status === 'success',
+          reportFilename: r.reportFilename,
+          cached: r.status === 'skipped',
+          generatedAt: r.timestamp || new Date().toISOString(),
+          error: r.status === 'error' ? r.message : undefined
+        })),
+        summary: {
+          totalFiles: result.summary?.totalRequested || filenames.length,
+          successCount: result.summary?.successCount || 0,
+          errorCount: result.summary?.errorCount || 0,
+          skippedCount: result.summary?.skippedCount || 0,
+          totalTimeMs: result.summary?.processingTimeMs || 0,
+          averageTimePerFile: result.summary?.processingTimeMs ? 
+            (result.summary.processingTimeMs / filenames.length) / 1000 : 0
+        },
+        errors: result.errors || []
+      };
     } catch (error) {
+      console.error('Bulk report generation error:', error);
       return {
         success: false,
         message: 'Bulk report generation failed',

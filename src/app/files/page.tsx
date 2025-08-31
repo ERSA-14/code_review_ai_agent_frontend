@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { Navbar } from "@/components/navbar";
-import { File, Calendar, HardDrive, Loader2, AlertCircle, Trash2, CheckSquare, Square } from "lucide-react";
+import { File, Calendar, HardDrive, Loader2, AlertCircle, Trash2, CheckSquare, Square, FileText, Settings, BarChart3 } from "lucide-react";
 import { apiService, SubmissionFile } from "@/services/api";
 
 export default function FilesPage() {
@@ -14,6 +14,23 @@ export default function FilesPage() {
   const [reportsMap, setReportsMap] = useState<Record<string, boolean>>({});
   const [rowErrors, setRowErrors] = useState<Record<string, string>>({});
   const [isDeletingSelected, setIsDeletingSelected] = useState(false);
+  
+  // Bulk report generation state
+  const [showBulkOptions, setShowBulkOptions] = useState(false);
+  const [isGeneratingBulk, setIsGeneratingBulk] = useState(false);
+  const [bulkProgress, setBulkProgress] = useState<{
+    current: number;
+    total: number;
+    currentFile: string;
+  } | null>(null);
+  const [bulkResults, setBulkResults] = useState<any>(null);
+  const [bulkOptions, setBulkOptions] = useState({
+    problemStatement: '',
+    additionalContext: '',
+    maxConcurrent: 3,
+    forceRegenerate: false,
+    skipExisting: true
+  });
 
   useEffect(() => {
     fetchFiles();
@@ -102,6 +119,60 @@ export default function FilesPage() {
       setError('Failed to delete files. Please try again.');
     } finally {
       setIsDeletingSelected(false);
+    }
+  };
+
+  const generateBulkReports = async () => {
+    if (selectedFiles.size === 0) {
+      setError('Please select files to generate reports for.');
+      return;
+    }
+
+    setIsGeneratingBulk(true);
+    setError(null);
+    setBulkResults(null);
+    setBulkProgress({
+      current: 0,
+      total: selectedFiles.size,
+      currentFile: 'Starting bulk generation...'
+    });
+
+    try {
+      const filesToProcess = Array.from(selectedFiles);
+      const result = await apiService.generateBulkReports(filesToProcess, bulkOptions);
+      
+      if (result.success) {
+        setBulkResults(result);
+        setBulkProgress({
+          current: result.summary.successCount,
+          total: result.summary.totalFiles,
+          currentFile: `Completed! Generated ${result.summary.successCount} reports.`
+        });
+        
+        // Update reports map
+        result.processedFiles.forEach(file => {
+          if (file.success) {
+            setReportsMap(prev => ({ ...prev, [file.filename]: true }));
+          }
+        });
+        
+        // Clear selections and refresh
+        setSelectedFiles(new Set());
+        setTimeout(() => {
+          fetchFiles();
+        }, 1000);
+      } else {
+        setError(result.message || 'Bulk report generation failed');
+        setBulkResults(result);
+      }
+    } catch (err) {
+      setError('Bulk report generation failed. Please try again.');
+    } finally {
+      setIsGeneratingBulk(false);
+      setTimeout(() => {
+        setBulkProgress(null);
+        setBulkResults(null);
+      }, 5000);
     }
   };
 
@@ -214,6 +285,14 @@ export default function FilesPage() {
                   </button>
                   <span className="text-gray-400">|</span>
                   <button
+                    onClick={() => setShowBulkOptions(!showBulkOptions)}
+                    className="text-green-600 hover:text-green-700 font-medium flex items-center space-x-1"
+                  >
+                    <FileText className="h-4 w-4" />
+                    <span>Generate Reports ({selectedFiles.size})</span>
+                  </button>
+                  <span className="text-gray-400">|</span>
+                  <button
                     onClick={deleteSelectedFiles}
                     disabled={isDeletingSelected}
                     className="text-red-600 hover:text-red-700 font-medium flex items-center space-x-1"
@@ -243,6 +322,172 @@ export default function FilesPage() {
               <AlertCircle className="h-5 w-5" />
               <span className="font-medium">{error}</span>
             </div>
+          </div>
+        )}
+
+        {/* Bulk Report Generation Options */}
+        {showBulkOptions && selectedFiles.size > 0 && (
+          <div className="bg-white rounded-lg shadow-lg p-6 mb-6">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-medium text-gray-900 flex items-center space-x-2">
+                <Settings className="h-5 w-5" />
+                <span>Bulk Report Generation Options</span>
+              </h3>
+              <button
+                onClick={() => setShowBulkOptions(false)}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                ×
+              </button>
+            </div>
+            
+            <div className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Problem Statement (Optional)
+                  </label>
+                  <textarea
+                    value={bulkOptions.problemStatement}
+                    onChange={(e) => setBulkOptions(prev => ({ ...prev, problemStatement: e.target.value }))}
+                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    rows={3}
+                    placeholder="Describe the problem these files are supposed to solve..."
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Additional Context (Optional)
+                  </label>
+                  <textarea
+                    value={bulkOptions.additionalContext}
+                    onChange={(e) => setBulkOptions(prev => ({ ...prev, additionalContext: e.target.value }))}
+                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    rows={3}
+                    placeholder="Any additional context for the code review..."
+                  />
+                </div>
+              </div>
+              
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Max Concurrent
+                  </label>
+                  <select
+                    value={bulkOptions.maxConcurrent}
+                    onChange={(e) => setBulkOptions(prev => ({ ...prev, maxConcurrent: parseInt(e.target.value) }))}
+                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  >
+                    <option value={1}>1 (Slowest, most reliable)</option>
+                    <option value={2}>2</option>
+                    <option value={3}>3 (Recommended)</option>
+                    <option value={5}>5</option>
+                    <option value={10}>10 (Fastest, may hit limits)</option>
+                  </select>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <input
+                    type="checkbox"
+                    id="forceRegenerate"
+                    checked={bulkOptions.forceRegenerate}
+                    onChange={(e) => setBulkOptions(prev => ({ ...prev, forceRegenerate: e.target.checked }))}
+                    className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500"
+                  />
+                  <label htmlFor="forceRegenerate" className="text-sm font-medium text-gray-700">
+                    Force Regenerate Existing Reports
+                  </label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <input
+                    type="checkbox"
+                    id="skipExisting"
+                    checked={bulkOptions.skipExisting}
+                    onChange={(e) => setBulkOptions(prev => ({ ...prev, skipExisting: e.target.checked }))}
+                    className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500"
+                  />
+                  <label htmlFor="skipExisting" className="text-sm font-medium text-gray-700">
+                    Skip Existing Reports
+                  </label>
+                </div>
+              </div>
+              
+              <div className="flex justify-end space-x-3">
+                <button
+                  onClick={() => setShowBulkOptions(false)}
+                  className="px-4 py-2 text-gray-700 bg-gray-200 hover:bg-gray-300 rounded-lg font-medium transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={generateBulkReports}
+                  disabled={isGeneratingBulk}
+                  className={`px-6 py-2 rounded-lg font-medium transition-colors flex items-center space-x-2 ${
+                    isGeneratingBulk
+                      ? 'bg-gray-400 cursor-not-allowed text-white'
+                      : 'bg-green-600 hover:bg-green-700 text-white'
+                  }`}
+                >
+                  {isGeneratingBulk ? (
+                    <>
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      <span>Generating...</span>
+                    </>
+                  ) : (
+                    <>
+                      <FileText className="h-4 w-4" />
+                      <span>Generate {selectedFiles.size} Reports</span>
+                    </>
+                  )}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Bulk Generation Progress */}
+        {bulkProgress && (
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-6 mb-6">
+            <div className="flex items-center space-x-3 mb-4">
+              <BarChart3 className="h-5 w-5 text-blue-600" />
+              <h3 className="text-lg font-medium text-blue-900">Bulk Report Generation Progress</h3>
+            </div>
+            
+            <div className="w-full bg-blue-200 rounded-full h-3 mb-3">
+              <div 
+                className="bg-blue-600 h-3 rounded-full transition-all duration-300 ease-out"
+                style={{ width: `${(bulkProgress.current / bulkProgress.total) * 100}%` }}
+              ></div>
+            </div>
+            
+            <div className="flex justify-between text-sm text-blue-700">
+              <span>{bulkProgress.currentFile}</span>
+              <span>{bulkProgress.current} / {bulkProgress.total}</span>
+            </div>
+            
+            {bulkResults && (
+              <div className="mt-4 p-4 bg-white rounded-lg">
+                <h4 className="font-medium text-gray-900 mb-2">Generation Summary</h4>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                  <div>
+                    <span className="text-gray-600">Total Files:</span>
+                    <span className="ml-2 font-medium">{bulkResults.summary?.totalFiles || 0}</span>
+                  </div>
+                  <div>
+                    <span className="text-green-600">Success:</span>
+                    <span className="ml-2 font-medium text-green-700">{bulkResults.summary?.successCount || 0}</span>
+                  </div>
+                  <div>
+                    <span className="text-red-600">Errors:</span>
+                    <span className="ml-2 font-medium text-red-700">{bulkResults.summary?.errorCount || 0}</span>
+                  </div>
+                  <div>
+                    <span className="text-gray-600">Time:</span>
+                    <span className="ml-2 font-medium">{bulkResults.summary?.averageTimePerFile?.toFixed(1) || 0}s avg</span>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         )}
 

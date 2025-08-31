@@ -14,6 +14,9 @@ export default function FilesPage() {
   const [reportsMap, setReportsMap] = useState<Record<string, boolean>>({});
   const [rowErrors, setRowErrors] = useState<Record<string, string>>({});
   const [isDeletingSelected, setIsDeletingSelected] = useState(false);
+  const [showDeleteConfirmation, setShowDeleteConfirmation] = useState(false);
+  const [deleteProgress, setDeleteProgress] = useState(0);
+  const [deleteStatus, setDeleteStatus] = useState<string>('');
   
   // Bulk report generation state
   const [showBulkOptions, setShowBulkOptions] = useState(false);
@@ -90,36 +93,62 @@ export default function FilesPage() {
 
   const deleteSelectedFiles = async () => {
     if (selectedFiles.size === 0) return;
+    setShowDeleteConfirmation(true);
+  };
 
+  const confirmDelete = async () => {
+    const filesToDelete = Array.from(selectedFiles);
+    setShowDeleteConfirmation(false);
     setIsDeletingSelected(true);
+    setDeleteProgress(0);
+    setDeleteStatus(`Preparing to delete ${filesToDelete.length} file(s)...`);
     setError(null);
     
     try {
-      const filesToDelete = Array.from(selectedFiles);
+      // Simulate progress updates
+      setDeleteProgress(25);
+      setDeleteStatus('Sending delete request...');
+      
       const result = await apiService.deleteFiles(filesToDelete);
+      
+      setDeleteProgress(75);
+      setDeleteStatus('Processing results...');
       
       if (result.success) {
         // Remove deleted files from the list
         setFiles(prev => prev.filter(file => !selectedFiles.has(file.filename)));
         setSelectedFiles(new Set());
         
-        // Show success message
-        if (result.deletedFiles.length > 0) {
-          setError(null);
-        }
+        setDeleteProgress(100);
+        setDeleteStatus(`Successfully deleted ${result.deletedFiles.length} file(s)!`);
         
         // If there were partial failures, show them
         if (result.errors && result.errors.length > 0) {
           setError(`Some files could not be deleted: ${result.errors.map((e: any) => e.filename).join(', ')}`);
         }
+        
+        // Hide progress after success
+        setTimeout(() => {
+          setIsDeletingSelected(false);
+          setDeleteProgress(0);
+          setDeleteStatus('');
+        }, 2000);
       } else {
         setError(result.message || 'Failed to delete files');
+        setIsDeletingSelected(false);
+        setDeleteProgress(0);
+        setDeleteStatus('');
       }
     } catch (err) {
       setError('Failed to delete files. Please try again.');
-    } finally {
       setIsDeletingSelected(false);
+      setDeleteProgress(0);
+      setDeleteStatus('');
     }
+  };
+
+  const cancelDelete = () => {
+    setShowDeleteConfirmation(false);
   };
 
   const generateBulkReports = async () => {
@@ -321,6 +350,55 @@ export default function FilesPage() {
             <div className="flex items-center space-x-2 text-red-600">
               <AlertCircle className="h-5 w-5" />
               <span className="font-medium">{error}</span>
+            </div>
+          </div>
+        )}
+
+        {/* Delete Confirmation Dialog */}
+        {showDeleteConfirmation && (
+          <div className="bg-amber-50 border border-amber-200 rounded-lg p-6 mb-6">
+            <div className="flex items-center space-x-3 mb-4">
+              <AlertCircle className="h-6 w-6 text-amber-600" />
+              <h3 className="text-lg font-medium text-amber-900">Confirm Deletion</h3>
+            </div>
+            <p className="text-amber-800 mb-4">
+              Are you sure you want to delete {selectedFiles.size} file(s)? This action cannot be undone.
+            </p>
+            <div className="flex space-x-3">
+              <button
+                onClick={confirmDelete}
+                className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg font-medium transition-colors"
+              >
+                Delete Files
+              </button>
+              <button
+                onClick={cancelDelete}
+                className="bg-gray-200 hover:bg-gray-300 text-gray-800 px-4 py-2 rounded-lg font-medium transition-colors"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Delete Progress */}
+        {isDeletingSelected && (
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-6 mb-6">
+            <div className="flex items-center space-x-3 mb-4">
+              <Loader2 className="h-6 w-6 text-blue-600 animate-spin" />
+              <h3 className="text-lg font-medium text-blue-900">Deleting Files</h3>
+            </div>
+            <div className="mb-3">
+              <div className="flex justify-between items-center mb-2">
+                <span className="text-sm text-blue-800">{deleteStatus}</span>
+                <span className="text-sm text-blue-600 font-medium">{deleteProgress}%</span>
+              </div>
+              <div className="w-full bg-blue-200 rounded-full h-2">
+                <div 
+                  className="bg-blue-600 h-2 rounded-full transition-all duration-300 ease-out"
+                  style={{ width: `${deleteProgress}%` }}
+                ></div>
+              </div>
             </div>
           </div>
         )}

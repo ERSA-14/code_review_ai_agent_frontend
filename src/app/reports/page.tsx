@@ -17,6 +17,9 @@ export default function ReportsPage() {
   const [loadingReport, setLoadingReport] = useState<string | null>(null);
   const [selectedReports, setSelectedReports] = useState<Set<string>>(new Set());
   const [isDeletingReports, setIsDeletingReports] = useState(false);
+  const [showDeleteConfirmation, setShowDeleteConfirmation] = useState(false);
+  const [deleteProgress, setDeleteProgress] = useState(0);
+  const [deleteStatus, setDeleteStatus] = useState<string>('');
 
   useEffect(() => {
     fetchReports();
@@ -97,17 +100,26 @@ export default function ReportsPage() {
 
   const handleDeleteSelected = async () => {
     if (selectedReports.size === 0) return;
+    setShowDeleteConfirmation(true);
+  };
 
+  const confirmDelete = async () => {
     const filenames = Array.from(selectedReports);
-    if (!confirm(`Are you sure you want to delete ${filenames.length} report(s)? This action cannot be undone.`)) {
-      return;
-    }
-
+    setShowDeleteConfirmation(false);
     setIsDeletingReports(true);
+    setDeleteProgress(0);
+    setDeleteStatus(`Preparing to delete ${filenames.length} report(s)...`);
     setError(null);
 
     try {
+      // Simulate progress updates
+      setDeleteProgress(25);
+      setDeleteStatus('Sending delete request...');
+      
       const result = await apiService.deleteReports(filenames);
+      
+      setDeleteProgress(75);
+      setDeleteStatus('Processing results...');
       
       if (result.success) {
         // Remove deleted reports from the list
@@ -116,18 +128,31 @@ export default function ReportsPage() {
         );
         setSelectedReports(new Set());
         
-        // Show success message
-        if (result.successCount > 0) {
-          alert(`Successfully deleted ${result.successCount} report(s)`);
-        }
+        setDeleteProgress(100);
+        setDeleteStatus(`Successfully deleted ${result.successCount} report(s)!`);
+        
+        // Hide progress after success
+        setTimeout(() => {
+          setIsDeletingReports(false);
+          setDeleteProgress(0);
+          setDeleteStatus('');
+        }, 2000);
       } else {
         setError(result.message || 'Failed to delete reports');
+        setIsDeletingReports(false);
+        setDeleteProgress(0);
+        setDeleteStatus('');
       }
     } catch (err) {
       setError('Failed to delete reports. Please try again.');
-    } finally {
       setIsDeletingReports(false);
+      setDeleteProgress(0);
+      setDeleteStatus('');
     }
+  };
+
+  const cancelDelete = () => {
+    setShowDeleteConfirmation(false);
   };
 
   const formatFileSize = (bytes: number) => {
@@ -334,6 +359,55 @@ export default function ReportsPage() {
             <div className="flex items-center space-x-2 text-red-600">
               <AlertCircle className="h-5 w-5" />
               <span className="font-medium">{error}</span>
+            </div>
+          </div>
+        )}
+
+        {/* Delete Confirmation Dialog */}
+        {showDeleteConfirmation && (
+          <div className="bg-amber-50 border border-amber-200 rounded-lg p-6 mb-6">
+            <div className="flex items-center space-x-3 mb-4">
+              <AlertCircle className="h-6 w-6 text-amber-600" />
+              <h3 className="text-lg font-medium text-amber-900">Confirm Deletion</h3>
+            </div>
+            <p className="text-amber-800 mb-4">
+              Are you sure you want to delete {selectedReports.size} report(s)? This action cannot be undone.
+            </p>
+            <div className="flex space-x-3">
+              <button
+                onClick={confirmDelete}
+                className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg font-medium transition-colors"
+              >
+                Delete Reports
+              </button>
+              <button
+                onClick={cancelDelete}
+                className="bg-gray-200 hover:bg-gray-300 text-gray-800 px-4 py-2 rounded-lg font-medium transition-colors"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Delete Progress */}
+        {isDeletingReports && (
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-6 mb-6">
+            <div className="flex items-center space-x-3 mb-4">
+              <Loader2 className="h-6 w-6 text-blue-600 animate-spin" />
+              <h3 className="text-lg font-medium text-blue-900">Deleting Reports</h3>
+            </div>
+            <div className="mb-3">
+              <div className="flex justify-between items-center mb-2">
+                <span className="text-sm text-blue-800">{deleteStatus}</span>
+                <span className="text-sm text-blue-600 font-medium">{deleteProgress}%</span>
+              </div>
+              <div className="w-full bg-blue-200 rounded-full h-2">
+                <div 
+                  className="bg-blue-600 h-2 rounded-full transition-all duration-300 ease-out"
+                  style={{ width: `${deleteProgress}%` }}
+                ></div>
+              </div>
             </div>
           </div>
         )}

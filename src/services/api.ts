@@ -84,6 +84,19 @@ export interface UploadStatsResponse {
   error?: string;
 }
 
+export interface BulkDeleteResponse {
+  success: boolean;
+  message: string;
+  deletedFiles: string[];
+  totalRequested: number;
+  successCount: number;
+  errorCount: number;
+  errors: Array<{
+    filename: string;
+    error: string;
+  }>;
+}
+
 export interface ListFilesResponse {
   success: boolean;
   count: number;
@@ -373,6 +386,33 @@ class ApiService {
     } catch (error) {
       console.error('Error getting files with reports:', error);
       return { files: [], reports: {} };
+    }
+  }
+
+  async deleteFiles(filenames: string[]): Promise<BulkDeleteResponse> {
+    try {
+      const response = await fetch(`${API_BASE_URL}/upload/bulk`, {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ filenames })
+      });
+
+      return await response.json();
+    } catch (error) {
+      return {
+        success: false,
+        message: 'Bulk delete failed',
+        deletedFiles: [],
+        totalRequested: filenames.length,
+        successCount: 0,
+        errorCount: filenames.length,
+        errors: filenames.map(filename => ({
+          filename,
+          error: error instanceof Error ? error.message : 'Unknown error'
+        }))
+      };
     }
   }
 }

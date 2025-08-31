@@ -89,6 +89,16 @@ export function Navbar({ variant = "default" }: NavbarProps) {
               >
                 Reports
               </Link>
+              <Link 
+                href="/evaluation" 
+                className={`transition-colors ${
+                  isActive("/evaluation") 
+                    ? "text-custom-accent dark:text-custom-accent font-medium" 
+                    : "text-gray-600 dark:text-custom-light hover:text-custom-accent dark:hover:text-custom-accent"
+                }`}
+              >
+                Evaluation
+              </Link>
             </nav>
             {/* <ThemeToggle /> */}
           </div>

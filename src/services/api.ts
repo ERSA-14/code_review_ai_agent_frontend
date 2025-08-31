@@ -52,6 +52,38 @@ export interface UploadResponse {
   error?: string;
 }
 
+export interface BulkUploadResponse {
+  success: boolean;
+  message: string;
+  uploadedFiles: Array<{
+    filename: string;
+    originalname: string;
+    mimetype: string;
+    size: number;
+    path: string;
+    uploadDate: string;
+  }>;
+  totalFiles: number;
+  successCount: number;
+  errorCount: number;
+  errors: Array<{
+    filename: string;
+    error: string;
+  }>;
+}
+
+export interface UploadStatsResponse {
+  success: boolean;
+  stats: {
+    totalFiles: number;
+    totalSize: number;
+    totalSizeMB: string;
+    fileTypes: { [key: string]: number };
+    uploadTrends: Array<{ date: string; count: number }>;
+  };
+  error?: string;
+}
+
 export interface ListFilesResponse {
   success: boolean;
   count: number;
@@ -75,6 +107,54 @@ class ApiService {
       return {
         success: false,
         message: 'Upload failed',
+        error: error instanceof Error ? error.message : 'Unknown error'
+      };
+    }
+  }
+
+  async uploadFiles(files: File[]): Promise<BulkUploadResponse> {
+    try {
+      const formData = new FormData();
+      files.forEach(file => {
+        formData.append('files', file);
+      });
+
+      const response = await fetch(`${API_BASE_URL}/upload/bulk`, {
+        method: 'POST',
+        body: formData,
+      });
+
+      return await response.json();
+    } catch (error) {
+      return {
+        success: false,
+        message: 'Bulk upload failed',
+        uploadedFiles: [],
+        totalFiles: files.length,
+        successCount: 0,
+        errorCount: files.length,
+        errors: files.map(file => ({
+          filename: file.name,
+          error: error instanceof Error ? error.message : 'Unknown error'
+        }))
+      };
+    }
+  }
+
+  async getUploadStats(): Promise<UploadStatsResponse> {
+    try {
+      const response = await fetch(`${API_BASE_URL}/upload/stats`);
+      return await response.json();
+    } catch (error) {
+      return {
+        success: false,
+        stats: {
+          totalFiles: 0,
+          totalSize: 0,
+          totalSizeMB: '0.00',
+          fileTypes: {},
+          uploadTrends: []
+        },
         error: error instanceof Error ? error.message : 'Unknown error'
       };
     }
